@@ -3,8 +3,8 @@
 ## Group T0xG0y
 | Name             | Number    | E-Mail             |
 | ---------------- | --------- | ------------------ |
-| John Doe         | 201901010 | ...                |
-| Jane Doe         | 201901011 | ...                |
+| Gabriela Silva   | 202004443 | up202004443@up.pt  |
+| Nelson Neto      | 202108117 | up202108117@up.pt  |
 
 ----
 
