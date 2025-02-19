@@ -1,5 +1,9 @@
 import { CGFscene, CGFcamera, CGFaxis } from "../lib/CGF.js";
 import { MyDiamond } from "./MyDiamond.js";
+import { MyTriangle } from "./MyTriangle.js";
+import { MyParallelogram } from "./MyParallelogram.js";
+import { MyTriangleSmall } from "./MyTriangleSmall.js";
+import { MyTriangleBig } from "./MyTriangleBig.js";
 
 /**
  * MyScene
@@ -26,9 +30,17 @@ export class MyScene extends CGFscene {
     //Initialize scene objects
     this.axis = new CGFaxis(this);
     this.diamond = new MyDiamond(this);
-
+    this.triangle = new MyTriangle(this);
+    this.parallelogram = new MyParallelogram(this);
+    this.triangleSmall = new MyTriangleSmall(this);
+    this.triangleBig = new MyTriangleBig(this);
     //Objects connected to MyInterface
     this.displayAxis = true;
+    this.displayTriangle = true;
+    this.displayDiamond = true;
+    this.displayParallelogram = true;
+    this.displayTriangleSmall = true;
+    this.displayTriangleBig = true;
     this.scaleFactor = 1;
   }
   initLights() {
@@ -39,11 +51,11 @@ export class MyScene extends CGFscene {
   }
   initCameras() {
     this.camera = new CGFcamera(
-      0.4,
-      0.1,
-      500,
-      vec3.fromValues(15, 15, 15),
-      vec3.fromValues(0, 0, 0)
+      0.4,  // angulo da camara (0.4 rad)
+      0.1,  // plano de corte. Tudo que esteja demasiado perto da camara nao e renderizado (ate 0.1 unidades)
+      500,  //plano de corte. Tudo o que esteja demasiado longe da camara nao e renderizado (ate 500 unidades)
+      vec3.fromValues(15, 15, 15),  //onde está a camara
+      vec3.fromValues(0, 0, 0)      //para onde está a camara a olhar
     );
   }
   setDefaultAppearance() {
@@ -91,7 +103,13 @@ export class MyScene extends CGFscene {
 
     // ---- BEGIN Primitive drawing section
 
-    this.diamond.display();
+    if (this.displayDiamond) this.diamond.display();
+    if (this.displayTriangle) this.triangle.display();
+    if (this.displayParallelogram) this.parallelogram.display();
+    if (this.displayTriangleSmall) this.triangleSmall.display();
+    if (this.displayTriangleBig) this.triangleBig.display();
+
+
 
     // ---- END Primitive drawing section
   }
