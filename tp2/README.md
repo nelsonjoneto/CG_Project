@@ -1,23 +1,20 @@
 # CG 2024/2025
 
-## Group T0xG0y
+## Group t07g10
 
-## TP 1 Notes
+## TP 2 Notes
 
-(add your main observations/remarks about your experiments here, in a bulleted list, and remove this line. Some examples below)
+- In exercise 1, we utilized the figures created in TP1 to assemble a single `MyTangram.js` through 3D graphical transformations. The most challenging aspect was applying the transformations to the pieces, as the order of transformations is crucial. An incorrect initial order of transformations led to significant difficulties in aligning the figures.
 
-- In exercise 1 we observed X
-- In exercise 2 we had difficulties in Y
+![Tangram](screenshots/cg-t07g10-tp2-1.png)
+<p align="center">Figure 1: Tangram</p>
 
-![Screenshot 1](screenshots/cg-t0xgxx-tp1-n.png)
+- In exercise 2, we created a unit cube centered at the origin of the reference frame. We specified the coordinates of the vertices and triangles that constitute the cube's mesh, ensuring that all external faces of the cube were visible. We combined the two previous figures and, after rotating them around the X-axis and translating them to the correct position, we managed to align them parallel to the XZ plane.
 
+![MyUnitCube](screenshots/cg-t07g10-tp2-2.png)
+<p align="center">Figure 2: MyUnitCube</p>
 
-- In the first exercise, we generated the two required geometric figures: a triangle and a parallelogram. The exercise sheet asked for the parallelogram to be double-sided. We initially struggled with this but quickly realized that it was simply a matter of reversing the order of the indices.
+- In exercise 3, we constructed another unit cube, this time using a square plane as a base. Through transformations, the cube was built. This approach was simpler to implement because it is modular.
 
-- In the second exercise, we simply were asked to reproduce the two figures presented to us: triangle big and triangle small.
-
-Here are the results:
-
-![Screenshot 2](screenshots/CG-t07g10-tp1-1.png)
-
-![Screenshot 3](screenshots/CG-t07g10-tp1-2.png)
+![Tangram and UnitCubeQuad](screenshots/cg-t07g10-tp2-3.png)
+<p align="center">Figure 3: Tangram and UnitCubeQuad</p>
