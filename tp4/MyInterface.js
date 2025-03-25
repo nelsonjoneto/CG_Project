@@ -23,6 +23,7 @@ export class MyInterface extends CGFinterface {
         this.gui.add(this.scene, 'displayAxis').name('Display Axis');
         this.gui.add(this.scene, 'displayQuad').name("Display Quad");
         this.gui.add(this.scene, 'displayTangram').name("Display Tangram");
+        this.gui.add(this.scene, 'displayUnitCubeQuad').name("Display Cube");
 
 
         //Dropdown for textures
