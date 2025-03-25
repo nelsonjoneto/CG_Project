@@ -3,7 +3,6 @@ import { MyDiamond } from './MyDiamond.js';
 import { MyParallelogram } from './MyParallelogram.js';
 import { MyTriangle } from './MyTriangle.js';
 import { MyTriangleSmall } from './MyTriangleSmall.js';
-import { MyTriangleBig } from './MyTriangleBig.js';
 
 /**
  * MyTangram
