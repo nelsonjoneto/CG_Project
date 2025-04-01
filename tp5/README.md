@@ -23,10 +23,6 @@ Each major step is represented by a Git tag (e.g., `tp5-1`) to enable precise ve
 
 The effect is dynamic and viewport-dependent: resizing the canvas alters the color split.
 
-📄 Files:
-- `shaders/teapot1.vert`
-- `shaders/teapot1.frag`
-
 
 ![TP5-1](screenshots/cg-t07g10-tp5-1.png)
 <p align="center">Figure 1: Teapot</p>
