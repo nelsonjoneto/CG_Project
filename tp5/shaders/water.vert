@@ -1,16 +1,19 @@
 attribute vec3 aVertexPosition;
-attribute vec3 aVertexNormal;
 attribute vec2 aTextureCoord;
 
 uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
-uniform mat4 uNMatrix;
 uniform float timeFactor;
-uniform sampler2D waterMap;
+uniform sampler2D uSampler2; // waterMap (usado só aqui)
+
 varying vec2 vTextureCoord;
 
 void main() {
-	vTextureCoord = aTextureCoord;
-	vec3 offset = aVertexNormal * 0.1 * texture2D(waterMap, vTextureCoord + vec2(0.1*timeFactor, 0.1*timeFactor)).b;
-	gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition + offset, 1.0);
+    vec2 displacedTexCoord = aTextureCoord + vec2(sin(timeFactor * 0.1), cos(timeFactor * 0.1)) * 0.05;
+    vTextureCoord = displacedTexCoord;
+
+    float height = texture2D(uSampler2, displacedTexCoord).r;
+    vec3 displacedPosition = aVertexPosition + vec3(0.0, height * 0.5, 0.0);
+
+    gl_Position = uPMatrix * uMVMatrix * vec4(displacedPosition, 1.0);
 }
