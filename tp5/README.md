@@ -27,8 +27,9 @@ The effect is dynamic and viewport-dependent: resizing the canvas alters the col
 - `shaders/teapot1.vert`
 - `shaders/teapot1.frag`
 
-📸 *Screenshot:*  
-![TP5-1](screenshots/tp5-1.png)
+
+![TP5-1](screenshots/cg-t07g10-tp5-1.png)
+<p align="center">Figure 1: Teapot</p>
 
 ### 1.2 Animated X-Axis Translation
 
@@ -54,9 +55,8 @@ The effect is dynamic and viewport-dependent: resizing the canvas alters the col
 L = 0.299 * R + 0.587 * G + 0.114 * B
 ```
 
-📸 *Screenshot:*  
-![TP5-2](screenshots/tp5-2.png)
-
+![TP5-2](screenshots/cg-t07g10-tp5-2.png)
+<p align="center">Figure 2: Grayscale</p>
 
 ## Part 2 – Animated Water Shader on a Plane
 ### 2.1 Water Shader Setup
@@ -85,4 +85,5 @@ vec2 displacedTexCoord = aTextureCoord + vec2(sin(timeFactor * 0.1), cos(timeFac
 
 - The animation is smooth and continuous due to time updates via update(t) in the scene.
 
-![TP5-3](screenshots/tp5-3.png)
+![TP5-3](screenshots/cg-t07g10-tp5-3.png)
+<p align="center">Figure 3: Water</p>
