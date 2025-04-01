@@ -91,6 +91,7 @@ export class ShaderScene extends CGFscene {
 			new CGFshader(this.gl, "shaders/texture1.vert", "shaders/convolution.frag"),
 			new CGFshader(this.gl, "shaders/teapot1.vert", "shaders/teapot1.frag"),
 			new CGFshader(this.gl, "shaders/teapot1.vert", "shaders/teapot1.frag"),
+			new CGFshader(this.gl, "shaders/texture1.vert", "shaders/grayscale.frag"),
 		];
 
 		// additional texture will have to be bound to texture unit 1 later, when using the shader, with "this.texture2.bind(1);"
@@ -119,6 +120,7 @@ export class ShaderScene extends CGFscene {
 			'Convolution': 8,
 			'Window Position Coloring': 9,
 			'Animated X Traslation': 10,
+			'Grayscale': 11,
 		};
 
 		// shader code panels references
@@ -205,8 +207,6 @@ export class ShaderScene extends CGFscene {
 			// ( so the loop period of timeFactor is 100 times 100 ms = 10s ; the actual animation loop depends on how timeFactor is used in the shader )
 			this.testShaders[6].setUniformsValues({ timeFactor: t / 100 % 100 });
 			this.testShaders[10].setUniformsValues({ timeFactor: t / 100 % 100 });
-
-
 	}
 
 	// main display function
