@@ -38,7 +38,7 @@ export class MySphere extends CGFobject {
                                  this.inside ? -z : z);
 
                 // Texture coordinates (u wraps around, v goes from 0 at top to 1 at bottom)
-                this.texCoords.push(slice / this.slices, stack / this.stacks);
+                this.texCoords.push(1 - (slice / this.slices), stack / this.stacks);
             }
         }
 
@@ -49,8 +49,9 @@ export class MySphere extends CGFobject {
                 const second = first + this.slices + 1;
 
                 // Two triangles per stack/slice
-                this.indices.push(first, second, first + 1);
-                this.indices.push(second, second + 1, first + 1);
+                this.indices.push(first, first + 1, second);
+                this.indices.push(second, first + 1, second + 1);                
+                
             }
         }
 

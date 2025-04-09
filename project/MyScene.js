@@ -33,7 +33,15 @@ export class MyScene extends CGFscene {
     this.axis = new CGFaxis(this, 20, 1);
     this.plane = new MyPlane(this, 64);
     this.sphere = new MySphere(this, 2, 64, 64, false)
-    this.panoramaTexture = new CGFtexture(this, 'textures/earth.jpg');
+
+    // Create panorama texture as a CGFappearance
+    this.panoramaTexture = new CGFappearance(this);
+    this.panoramaTexture.setAmbient(0.1, 0.1, 0.1, 1.0);
+    this.panoramaTexture.setDiffuse(0.9, 0.9, 0.9, 1.0);
+    this.panoramaTexture.setSpecular(0.1, 0.1, 0.1, 1.0);
+    this.panoramaTexture.setEmission(1.0, 1.0, 1.0, 1.0); // Set emissive component to max
+    this.panoramaTexture.setShininess(10.0);
+    this.panoramaTexture.loadTexture('textures/earth.jpg');
     //this.panorama = new MyPanorama(this, this.panoramaTexture, this.camera);
   }
   initLights() {
@@ -77,6 +85,7 @@ export class MyScene extends CGFscene {
     this.setAmbient(0.5, 0.5, 0.5, 1.0);
     this.setDiffuse(0.5, 0.5, 0.5, 1.0);
     this.setSpecular(0.5, 0.5, 0.5, 1.0);
+    this.setEmission(0,0,0,1)
     this.setShininess(10.0);
   }
   display() {
@@ -92,17 +101,16 @@ export class MyScene extends CGFscene {
     
     // Apply texture
 
+    this.setDefaultAppearance();
 
     // Draw axis
     this.axis.display();
-
-    this.setDefaultAppearance();
-
     this.scale(10, 10, 10);
     //this.rotate(-Math.PI / 2, 1, 0, 0);
     //this.plane.display();
-    this.panoramaTexture.bind()
+    this.panoramaTexture.apply()
     this.sphere.display();
+    //this.sphere.enableNormalViz()
 
   }
 }
