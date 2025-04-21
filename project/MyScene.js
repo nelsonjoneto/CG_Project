@@ -107,7 +107,7 @@ export class MyScene extends CGFscene {
     this.axis.display();
     this.scale(10, 10, 10);
     //this.rotate(-Math.PI / 2, 1, 0, 0);
-    //this.plane.display();
+    this.plane.display();
     this.panoramaTexture.apply()
     this.sphere.display();
     //this.sphere.enableNormalViz()
