@@ -124,7 +124,7 @@ export class MyScene extends CGFscene {
     if (this.displayAxis) this.axis.display();
     //this.module.display();
 
-    this.forest.display()
+    this.module.display()
     
   }
 }

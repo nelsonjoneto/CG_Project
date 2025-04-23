@@ -29,7 +29,7 @@ export class MyMainModule extends CGFobject {
 
         // Special elements
         this.door = new MyWindow(scene, this.doorTexture, this.floorHeight * 0.8, this.floorHeight);
-        this.helipad = new MyWindow(scene, this.helipadTexture, this.depth * 0.5, this.depth * 0.5);
+        this.helipad = new MyWindow(scene, this.heliportTexture, this.depth * 0.5, this.depth * 0.5);
 
         // Materials
         this.wallMaterial = new CGFappearance(scene);
@@ -84,6 +84,7 @@ export class MyMainModule extends CGFobject {
         this.scene.pushMatrix();
         this.scene.translate(0, this.totalHeight + 0.01, 0);
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
+        
         this.helipad.display();
         this.scene.popMatrix();
     }
