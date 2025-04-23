@@ -1,7 +1,10 @@
-import { CGFscene, CGFcamera, CGFaxis, CGFappearance, CGFtexture} from "../lib/CGF.js";
-import { MyPlane } from "./MyPlane.js";
-import { MySphere } from "./MySphere.js";
-//import { MyPanorama } from "./MyPanorama.js";
+import { CGFscene, CGFcamera, CGFaxis, CGFtexture} from "../lib/CGF.js";
+import { MyPanorama } from './MyPanorama.js';
+import { MyGround } from "./MyGround.js";
+import { MyBuilding } from "./MyBuilding.js";
+import { MyUnitCube } from "./MyUnitCube.js";
+import { MyTree } from "./MyTree.js";
+import { MyForest } from "./MyForest.js";
 
 /**
  * MyScene
@@ -26,24 +29,32 @@ export class MyScene extends CGFscene {
     this.gl.depthFunc(this.gl.LEQUAL);
 
     this.enableTextures(true);
+    this.initTextures();
 
     this.setUpdatePeriod(50);
 
     //Initialize scene objects
     this.axis = new CGFaxis(this, 20, 1);
-    this.plane = new MyPlane(this, 64);
-    this.sphere = new MySphere(this, 2, 64, 64, false)
+    this.ground = new MyGround(this);
+    this.panorama = new MyPanorama(this, this.panoramaTexture);
+    this.module = new MyBuilding(this,10, 2, 2, 
+      [this.windowTexture, this.windowTexture, this.windowTexture],[0.8, 0.8, 0.8, 1.0]);
 
-    // Create panorama texture as a CGFappearance
-    this.panoramaTexture = new CGFappearance(this);
-    this.panoramaTexture.setAmbient(0.1, 0.1, 0.1, 1.0);
-    this.panoramaTexture.setDiffuse(0.9, 0.9, 0.9, 1.0);
-    this.panoramaTexture.setSpecular(0.1, 0.1, 0.1, 1.0);
-    this.panoramaTexture.setEmission(1.0, 1.0, 1.0, 1.0); // Set emissive component to max
-    this.panoramaTexture.setShininess(10.0);
-    this.panoramaTexture.loadTexture('textures/earth.jpg');
-    //this.panorama = new MyPanorama(this, this.panoramaTexture, this.camera);
+    this.cube = new MyUnitCube(this);
+    this.forest = new MyForest(this, 10, 10, 20, 20);
+
+
+    this.displayAxis = false;
+    this.displayPanorama = true;
+    this.displayPlane = true;
+
   }
+
+  initTextures() {
+    this.panoramaTexture = new CGFtexture(this, "textures/panorama6.jpg");
+    this.windowTexture = new CGFtexture(this, "textures/window.jpg");
+  }
+
   initLights() {
     this.lights[0].setPosition(200, 200, 200, 1);
     this.lights[0].setDiffuse(1.0, 1.0, 1.0, 1.0);
@@ -52,10 +63,10 @@ export class MyScene extends CGFscene {
   }
   initCameras() {
     this.camera = new CGFcamera(
-      0.4,
+      1,
       0.1,
       1000,
-      vec3.fromValues(200, 200, 200),
+      vec3.fromValues(100, 100, 100),
       vec3.fromValues(0, 0, 0)
     );
   }
@@ -96,21 +107,24 @@ export class MyScene extends CGFscene {
     // Initialize Model-View matrix as identity (no transformation
     this.updateProjectionMatrix();
     this.loadIdentity();
+    
     // Apply transformations corresponding to the camera position relative to the origin
     this.applyViewMatrix(); 
     
-    // Apply texture
+    
+    if (this.displayPanorama) {
+      this.panorama.display();
+    }
 
-    this.setDefaultAppearance();
+    if (this.displayPlane) {
+        this.ground.display();
+    }
 
-    // Draw axis
-    this.axis.display();
-    this.scale(10, 10, 10);
-    //this.rotate(-Math.PI / 2, 1, 0, 0);
-    //this.plane.display();
-    this.panoramaTexture.apply()
-    this.sphere.display();
-    //this.sphere.enableNormalViz()
+    // Draw axis last
+    if (this.displayAxis) this.axis.display();
+    //this.module.display();
 
+    this.forest.display()
+    
   }
 }
