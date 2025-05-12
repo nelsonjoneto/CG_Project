@@ -27,6 +27,8 @@ export class MyScene extends CGFscene {
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.enable(this.gl.CULL_FACE);
     this.gl.depthFunc(this.gl.LEQUAL);
+    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+    this.gl.enable(this.gl.BLEND);
 
     this.enableTextures(true);
     this.initTextures();
@@ -122,9 +124,9 @@ export class MyScene extends CGFscene {
 
     // Draw axis last
     if (this.displayAxis) this.axis.display();
-    //this.module.display();
+    
 
-    this.forest.display()
+    this.module.display()
     
   }
 }

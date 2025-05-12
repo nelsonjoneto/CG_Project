@@ -1,4 +1,5 @@
 import { CGFobject, CGFappearance, CGFtexture } from '../lib/CGF.js';
+import { MyHelicopter } from './MyHeli.js';
 import { MyUnitCube } from './MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
 
@@ -8,6 +9,8 @@ export class MyMainModule extends CGFobject {
     constructor(scene, width, numFloors, windowsPerFloor, windowSize, color, windowTexture) {
         super(scene);
         this.scene = scene;
+
+        this.helicopter = new MyHelicopter(scene);
 
         //Textures
         this.doorTexture = new CGFtexture(this.scene, "textures/door.png");
@@ -29,7 +32,7 @@ export class MyMainModule extends CGFobject {
 
         // Special elements
         this.door = new MyWindow(scene, this.doorTexture, this.floorHeight * 0.8, this.floorHeight);
-        this.helipad = new MyWindow(scene, this.helipadTexture, this.depth * 0.5, this.depth * 0.5);
+        this.helipad = new MyWindow(scene, this.heliportTexture, this.depth * 0.5, this.depth * 0.5);
 
         // Materials
         this.wallMaterial = new CGFappearance(scene);
@@ -84,9 +87,18 @@ export class MyMainModule extends CGFobject {
         this.scene.pushMatrix();
         this.scene.translate(0, this.totalHeight + 0.01, 0);
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
+        
         this.helipad.display();
         this.scene.popMatrix();
     }
+
+    displayHelicopter() {
+        this.scene.pushMatrix();
+        this.scene.translate(0, this.totalHeight + 0.8, 0); // Posicione o helicóptero no heliponto
+        this.helicopter.display();
+        this.scene.popMatrix();
+    }
+    
 
     display() {
         this.scene.pushMatrix();
@@ -100,7 +112,7 @@ export class MyMainModule extends CGFobject {
         // Special elements
         this.displayDoor();
         this.displayHelipad();
-        
+        this.displayHelicopter();
         this.scene.popMatrix();
     }
 }
