@@ -2,16 +2,17 @@ import { CGFobject } from '../lib/CGF.js';
 import { MyCone } from './MyCone.js';
 import { MyPyramid } from './MyPyramid.js';
 import { CGFappearance } from '../lib/CGF.js';
+import { CGFtexture } from '../lib/CGF.js'; // Importa CGFtexture
 
 /**
  * MyTree
  * @constructor
- * @param scene - Reference to MyScene object
- * @param rotationAngle - Inclination of the tree in degrees
- * @param rotationAxis - Inclination axis, 'x' or 'z'
- * @param trunkRadius - Radius of the trunk (cone base)
- * @param totalHeight - Total height of the tree
- * @param crownColor - Array of RGB values (e.g. [0, 0.6, 0])
+ * @param scene - Referência ao objeto MyScene
+ * @param rotationAngle - Inclinação da árvore em graus
+ * @param rotationAxis - Eixo de inclinação, 'x' ou 'z'
+ * @param trunkRadius - Raio do tronco (base do cone)
+ * @param totalHeight - Altura total da árvore
+ * @param crownColor - Array de valores RGB (ex. [0, 0.6, 0])
  */
 export class MyTree extends CGFobject {
     constructor(scene, rotationAngle, rotationAxis, trunkRadius, totalHeight, crownColor) {
@@ -24,43 +25,44 @@ export class MyTree extends CGFobject {
         this.totalHeight = totalHeight;
         this.crownColor = crownColor;
 
-        // Trunk: full tree height
+        // Altura do tronco: altura total da árvore
         this.trunkHeight = totalHeight;
-        // Crown spans top 80% of total height
+        // Copa ocupa os 80% superiores da altura total
         this.crownHeight = totalHeight * 0.8;
         this.crownBaseY = totalHeight - this.crownHeight;
 
-        // Create trunk (full-height cone)
+        // Cria o tronco (cone de altura total)
         this.trunk = new MyCone(
             scene,
             12,                // slices
             1,                 // stacks
-            trunkRadius * 2,   // baseWidth = diameter
+            trunkRadius * 2,   // baseWidth = diâmetro
             this.trunkHeight   // height
         );
 
-        // Crown pyramids parameters
+        // Parâmetros das pirâmides da copa
         this.pyramidHeight = 1.5;
         const overlap = 0.5;
         const stepY = this.pyramidHeight * (1 - overlap);
 
-        // Compute number of pyramids so top tip aligns with trunk tip
+        // Calcula o número de pirâmides para que o topo coincida com o topo do tronco
         const availableHeight = this.crownHeight;
         const count = Math.max(
             1,
             Math.ceil((availableHeight - this.pyramidHeight) / stepY) + 1
         );
 
-        // Build an array of identical pyramids (base = 2 * trunkRadius)
+        // Cria um array de pirâmides idênticas (base = 2 * trunkRadius)
         this.crownPyramids = [];
         const baseWidth = trunkRadius * 3.5;
+        const pyramidFaces = 6
         for (let i = 0; i < count; i++) {
             this.crownPyramids.push(
-                new MyPyramid(scene, 6, 1, baseWidth, this.pyramidHeight)
+                new MyPyramid(scene, pyramidFaces, 1, baseWidth, this.pyramidHeight)
             );
         }
 
-        // Materials
+        // Materiais
         this.trunkMaterial = new CGFappearance(scene);
         this.trunkMaterial.setAmbient(0.3, 0.2, 0.1, 1);
         this.trunkMaterial.setDiffuse(0.3, 0.2, 0.1, 1);
@@ -69,7 +71,19 @@ export class MyTree extends CGFobject {
         this.crownMaterial.setAmbient(...crownColor, 1);
         this.crownMaterial.setDiffuse(...crownColor, 1);
 
-        // Store for display
+        // Carrega as texturas
+        this.trunkTexture = new CGFtexture(scene, "textures/trunk.jpg");
+        this.crownTexture = new CGFtexture(scene, "textures/crown.jpg");
+
+        // Aplica as texturas aos materiais
+        this.trunkMaterial.setTexture(this.trunkTexture);
+        this.crownMaterial.setTexture(this.crownTexture);
+
+        // Configura a forma como a textura se repete
+        this.trunkMaterial.setTextureWrap('REPEAT', 'REPEAT');
+        this.crownMaterial.setTextureWrap('REPEAT', 'REPEAT');
+
+        // Armazena para exibição
         this._stepY = stepY;
     }
 
