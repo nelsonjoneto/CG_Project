@@ -8,6 +8,8 @@ import { MyVerticalFin } from './MyVerticalFin.js';
 import { CGFappearance } from '../lib/CGF.js';
 import { MySolidCylinder } from './MySolidCylinder.js';
 import { MyBucket } from './MyBucket.js';
+import { vec3 } from 'https://cdn.jsdelivr.net/npm/gl-matrix@3.4.3/esm/index.js';
+
 
 
 export class MyHelicopter extends CGFobject {
@@ -27,7 +29,9 @@ export class MyHelicopter extends CGFobject {
         this.tailConnector = new MySolidCylinder(scene, 20, 1);
         this.bucket = new MyBucket(scene);
 
-
+        this.mainRotorAngle = 0;
+        this.tailRotorAngle = 0;
+        this.rotorSpeed = 0.3;
 
 
         // Material para o helicóptero
@@ -46,14 +50,69 @@ export class MyHelicopter extends CGFobject {
         this.otherMaterial.setShininess(10.0);
         this.otherMaterial.loadTexture("textures/helicopter.jpg"); // Caminho para a textura do helicóptero
 
-        
-        
+        // Estado de movimento
+        this.position = vec3.fromValues(0, 9, 0); // posição inicial no heliporto (ajuste y se necessário)
+        this.orientation = 0; // ângulo em torno do eixo Y
+        this.velocity = vec3.fromValues(0, 0, 0); // vetor de velocidade
+
+        this.speed = 0; // magnitude da velocidade
+        this.pitch = 0; // inclinação
+        this.state = "cruising"; // landed | taking_off | cruising | landing
+        this.position = vec3.fromValues(0, 1, 0); // deve estar compatível com a altura do heliporto
+
+        console.log("Posição do helicóptero:", this.position);
+
+    }
+
+    update(t) {
+        const dt = this.scene.speedFactor * 0.05;
+
+        this.mainRotorAngle += this.rotorSpeed;
+        this.tailRotorAngle += this.rotorSpeed * 4;
+
+        if (this.state === "cruising") {
+            // atualiza velocidade com orientação atual
+            if (!isNaN(this.orientation) && !isNaN(this.speed)) {
+                const dir = vec3.fromValues(Math.sin(this.orientation), 0, Math.cos(this.orientation));
+                vec3.normalize(dir, dir);
+                vec3.scale(this.velocity, dir, this.speed);
+                vec3.scaleAndAdd(this.position, this.position, this.velocity, dt);
+            }
+        }
+
+        // inclinação gradual baseada na velocidade
+        this.pitch = this.speed > 0 ? -Math.min(0.3, this.speed * 0.2) :
+                    this.speed < 0 ? Math.min(0.3, -this.speed * 0.2) : 0;
+    }
+
+    turn(v) {
+        this.orientation += v * 0.05 * this.scene.speedFactor;
+    }
+
+    accelerate(v) {
+        this.speed += v * 0.02 * this.scene.speedFactor;
+        // limites de velocidade
+        this.speed = Math.max(Math.min(this.speed, 0.5), -0.3);
+    }
+
+    reset() {
+        this.position = vec3.fromValues(0, 9, 0);
+        this.orientation = 0;
+        this.velocity = vec3.fromValues(0, 0, 0);
+        this.speed = 0;
+        this.state = "landed";
+        this.pitch = 0;
     }
 
     display() {
         this.scene.pushMatrix();
 
-        this.helicopterMaterial.apply(); // Aplica o material do helicóptero
+        // Transformações de posição e rotação
+        this.scene.translate(...this.position);
+        this.scene.rotate(this.orientation, 0, 1, 0);
+        this.scene.rotate(this.pitch, 1, 0, 0);
+
+        this.helicopterMaterial.apply();
         
         // Corpo principal
         this.scene.pushMatrix();
@@ -79,18 +138,21 @@ export class MyHelicopter extends CGFobject {
 
         
 
-        // blades
+        // blades principais com rotação animada
+        this.scene.pushMatrix();
+        this.scene.translate(0, 0.32, 0); // centro do rotor
+        this.scene.rotate(this.mainRotorAngle, 0, 1, 0); // rotação animada em Y
+
         for (let i = 0; i < 4; i++) {
             this.scene.pushMatrix();
-            this.scene.translate(0, 0.32, 0); // ligeiramente acima do cilindro
-            this.scene.rotate(i * Math.PI / 2, 0, 1, 0); // 0º, 90º, 180º, 270º
+            this.scene.rotate(i * Math.PI / 2, 0, 1, 0); // 90º, 180º, 270º...
             this.scene.scale(1.5, 1.5, 1.5);
-
             this.scene.translate(0.7, 0.2, 0);
-            
             this.blade.display();
             this.scene.popMatrix();
         }
+        this.scene.popMatrix();
+
 
         this.scene.pushMatrix();
         this.scene.translate(0, 0.45, 0); // posição relativa abaixo do helicóptero
@@ -151,15 +213,20 @@ export class MyHelicopter extends CGFobject {
         this.scene.popMatrix();
 
 
+        // blades traseiras com rotação animada
+        this.scene.pushMatrix();
+        this.scene.translate(-2.5, 0.3, 0.04); // centro do rotor traseiro
+        this.scene.rotate(this.tailRotorAngle, 0, 0, 1); // rotação animada no plano XY
+
         for (let i = 0; i < 4; i++) {
             this.scene.pushMatrix();
-            this.scene.translate(-2.5, 0.3, 0.04); // centro do rotor traseiro
-
-            this.scene.rotate(i * Math.PI / 2, 0, 0, 1); // gira em torno de Z → plano XY
+            this.scene.rotate(i * Math.PI / 2, 0, 0, 1);
             this.scene.scale(0.2, 0.5, 0.5);
             this.blade.display();
             this.scene.popMatrix();
         }
+        this.scene.popMatrix();
+
         this.scene.popMatrix();
         
     }

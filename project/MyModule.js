@@ -73,6 +73,7 @@ export class MyModule extends CGFobject {
 
     display() {
         this.scene.pushMatrix();
+        this.scene.setDefaultAppearance();
         this.wallMaterial.apply();
         
         // Draw scaled cube structure

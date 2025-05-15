@@ -2,6 +2,7 @@ import { CGFscene, CGFcamera, CGFaxis, CGFtexture} from "../lib/CGF.js";
 import { MyPanorama } from './MyPanorama.js';
 import { MyGround } from "./MyGround.js";
 import { MyBuilding } from "./MyBuilding.js";
+import { MyMainModule } from "./MyMainModule.js";
 import { MyUnitCube } from "./MyUnitCube.js";
 import { MyTree } from "./MyTree.js";
 import { MyForest } from "./MyForest.js";
@@ -39,12 +40,16 @@ export class MyScene extends CGFscene {
     this.axis = new CGFaxis(this, 20, 1);
     this.ground = new MyGround(this);
     this.panorama = new MyPanorama(this, this.panoramaTexture);
-    this.module = new MyBuilding(this,10, 2, 2, 
-      [this.windowTexture, this.windowTexture, this.windowTexture],[0.8, 0.8, 0.8, 1.0]);
-
+    //this.module = new MyMainModule(this, 10, 2, 2, 
+    //  [this.windowTexture, this.windowTexture, this.windowTexture],
+    //  [0.8, 0.8, 0.8, 1.0]);
     this.cube = new MyUnitCube(this);
     this.forest = new MyForest(this, 10, 10, 20, 20);
 
+
+    this.building = new MyBuilding(this, 10, 2, 2, 
+      [this.windowTexture, this.windowTexture, this.windowTexture],
+      [0.8, 0.8, 0.8, 1.0]);
 
     this.displayAxis = false;
     this.displayPanorama = true;
@@ -76,22 +81,48 @@ export class MyScene extends CGFscene {
     var text = "Keys pressed: ";
     var keysPressed = false;
 
-    // Check for key codes e.g. in https://keycode.info/
+    const helicopter = this.building?.modules[1]?.helicopter;
+    if (!helicopter || helicopter.state !== "cruising") return;
+
     if (this.gui.isKeyPressed("KeyW")) {
-      text += " W ";
-      keysPressed = true;
+        text += " W ";
+        helicopter.accelerate(1);
+        keysPressed = true;
     }
 
     if (this.gui.isKeyPressed("KeyS")) {
-      text += " S ";
-      keysPressed = true;
+        text += " S ";
+        helicopter.accelerate(-1);
+        keysPressed = true;
     }
+
+    if (this.gui.isKeyPressed("KeyA")) {
+        text += " A ";
+        helicopter.turn(-1);
+        keysPressed = true;
+    }
+
+    if (this.gui.isKeyPressed("KeyD")) {
+        text += " D ";
+        helicopter.turn(1);
+        keysPressed = true;
+    }
+
+    if (this.gui.isKeyPressed("KeyR")) {
+        text += " R ";
+        helicopter.reset();
+        keysPressed = true;
+    }
+
     if (keysPressed)
-      console.log(text);
+        console.log(text);
   }
 
-  update(t) {
+  update(t) { 
     this.checkKeys();
+
+    if (this.building && this.building.modules[1])
+      this.building.modules[1].update(t);
   }
 
   setDefaultAppearance() {
@@ -125,8 +156,9 @@ export class MyScene extends CGFscene {
     // Draw axis last
     if (this.displayAxis) this.axis.display();
     
+    this.building.display();
 
-    this.module.display()
+    //this.module.display()
     
   }
 }

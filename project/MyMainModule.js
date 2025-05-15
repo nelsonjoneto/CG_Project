@@ -59,9 +59,17 @@ export class MyMainModule extends CGFobject {
         }
     }
 
+    update(t) {
+        
+        if (this.helicopter) {
+            this.helicopter.update(t);
+        }
+    }
+
     displayStructure() {
         this.scene.pushMatrix();
         this.scene.scale(this.width, this.totalHeight, this.depth);
+        this.scene.setDefaultAppearance();
         this.wallMaterial.apply();
         this.cube.display();
         this.scene.popMatrix();
@@ -103,6 +111,7 @@ export class MyMainModule extends CGFobject {
     display() {
         this.scene.pushMatrix();
         
+        this.scene.setDefaultAppearance();
         // Main structure
         this.displayStructure();
         
@@ -115,4 +124,5 @@ export class MyMainModule extends CGFobject {
         this.displayHelicopter();
         this.scene.popMatrix();
     }
+    
 }
