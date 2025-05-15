@@ -3,15 +3,16 @@ import { CGFobject } from '../lib/CGF.js';
 /**
  * MyPyramid
  * @constructor
- * @param scene - Reference to MyScene object
- * @param slices - Number of divisions around the Y axis
- * @param stacks - Number of divisions along the Y axis
- * @param baseWidth - Width of the pyramid's base
- * @param height - Height of the pyramid
+ * @param scene - Referência à cena a que pertence o objeto
+ * @param slices - Número de divisões ao longo do eixo Y
+ * @param stacks - Número de divisões ao longo do eixo Y
+ * @param baseWidth - Largura da base da pirâmide
+ * @param height - Altura da pirâmide
  */
 export class MyPyramid extends CGFobject {
     constructor(scene, slices, stacks, baseWidth, height) {
         super(scene);
+        this.scene = scene;
         this.slices = slices;
         this.stacks = stacks;
         this.baseWidth = baseWidth;
@@ -23,36 +24,27 @@ export class MyPyramid extends CGFobject {
         this.vertices = [];
         this.indices = [];
         this.normals = [];
+        this.texCoords = []; // Array para coordenadas de textura
 
-        const halfBase = this.baseWidth / 2; // Half of the base width
+        const halfBase = this.baseWidth / 2;
         let ang = 0;
         const alphaAng = (2 * Math.PI) / this.slices;
 
         for (let i = 0; i < this.slices; i++) {
-            // All vertices have to be declared for a given face
-            // even if they are shared with others, as the normals
-            // in each face will be different
-
             const sa = Math.sin(ang);
             const saa = Math.sin(ang + alphaAng);
             const ca = Math.cos(ang);
             const caa = Math.cos(ang + alphaAng);
 
-            // Apex vertex
             this.vertices.push(0, this.height, 0);
-
-            // Base vertices
             this.vertices.push(ca * halfBase, 0, -sa * halfBase);
             this.vertices.push(caa * halfBase, 0, -saa * halfBase);
 
-            // Triangle normal computed by cross product of two edges
             const normal = [
                 saa - sa,
                 ca * saa - sa * caa,
                 caa - ca
             ];
-
-            // Normalize the normal vector
             const nsize = Math.sqrt(
                 normal[0] * normal[0] +
                 normal[1] * normal[1] +
@@ -62,13 +54,20 @@ export class MyPyramid extends CGFobject {
             normal[1] /= nsize;
             normal[2] /= nsize;
 
-            // Push normal once for each vertex of this triangle
             this.normals.push(...normal);
             this.normals.push(...normal);
             this.normals.push(...normal);
 
-            // Add indices for the triangle
             this.indices.push(3 * i, 3 * i + 1, 3 * i + 2);
+
+            // Calcula as coordenadas de textura para a face lateral da pirâmide
+            const u1 = 0.5;
+            const v1 = 1;
+            const u2 = (ca + 1) / 2;
+            const v2 = 0;
+            const u3 = (caa + 1) / 2;
+            const v3 = 0;
+            this.texCoords.push(u1, v1, u2, v2, u3, v3);
 
             ang += alphaAng;
         }
@@ -78,14 +77,11 @@ export class MyPyramid extends CGFobject {
     }
 
     /**
-     * Called when user interacts with GUI to change object's complexity.
-     * @param {integer} complexity - Changes number of slices
+     * Chamado quando o utilizador interage com a GUI para alterar a complexidade do objeto.
+     * @param {integer} complexity - Altera o número de slices
      */
     updateBuffers(complexity) {
-        this.slices = 3 + Math.round(9 * complexity); // Complexity varies 0-1, so slices vary 3-12
-
-        // Reinitialize buffers
+        this.slices = 3 + Math.round(9 * complexity);
         this.initBuffers();
-        this.initNormalVizBuffers();
     }
 }

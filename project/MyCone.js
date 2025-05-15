@@ -3,15 +3,16 @@ import { CGFobject } from '../lib/CGF.js';
 /**
  * MyCone
  * @constructor
- * @param scene - Reference to MyScene object
- * @param slices - Number of divisions around the Y axis
- * @param stacks - Number of divisions along the Y axis
- * @param baseWidth - Width of the cone's base
- * @param height - Height of the cone
+ * @param scene - Referência à cena a que pertence o objeto
+ * @param slices - Número de divisões ao longo do eixo Y
+ * @param stacks - Número de divisões ao longo do eixo Y
+ * @param baseWidth - Largura da base do cone
+ * @param height - Altura do cone
  */
 export class MyCone extends CGFobject {
     constructor(scene, slices, stacks, baseWidth, height) {
         super(scene);
+        this.scene = scene; // Guarda a referência à cena
         this.slices = slices;
         this.stacks = stacks;
         this.baseWidth = baseWidth;
@@ -23,48 +24,47 @@ export class MyCone extends CGFobject {
         this.vertices = [];
         this.indices = [];
         this.normals = [];
+        this.texCoords = []; // Coordenadas de textura
 
-        const halfBase = this.baseWidth / 2; // Half of the base width
+        const halfBase = this.baseWidth / 2;
         let ang = 0;
         const alphaAng = (2 * Math.PI) / this.slices;
 
-        // Generate base vertices and normals
         for (let i = 0; i < this.slices; i++) {
             const x = Math.cos(ang) * halfBase;
             const z = -Math.sin(ang) * halfBase;
 
-            // Base vertex
             this.vertices.push(x, 0, z);
 
-            // Normal for the side face
             const normalX = Math.cos(ang);
             const normalZ = -Math.sin(ang);
-            const normalY = this.height / Math.sqrt(this.height ** 2 + halfBase ** 2); // Normalize the normal
+            const normalY = this.height / Math.sqrt(this.height ** 2 + halfBase ** 2);
             this.normals.push(normalX, normalY, normalZ);
 
-            // Add indices for the side face
             this.indices.push(i, (i + 1) % this.slices, this.slices);
 
+            // Calcula as coordenadas de textura para a lateral do cone
+            const u = i / this.slices;
+            const v = 0;
+            this.texCoords.push(u, v);
             ang += alphaAng;
         }
 
-        // Apex vertex
+        // Vértice do topo
         this.vertices.push(0, this.height, 0);
         this.normals.push(0, 1, 0);
+        this.texCoords.push(0.5, 1); // Coordenadas de textura para o topo
 
         this.primitiveType = this.scene.gl.TRIANGLES;
         this.initGLBuffers();
     }
 
     /**
-     * Called when user interacts with GUI to change object's complexity.
-     * @param {integer} complexity - Changes number of slices
+     * Chamado quando o utilizador interage com a GUI para alterar a complexidade do objeto.
+     * @param {integer} complexity - Altera o número de slices
      */
     updateBuffers(complexity) {
-        this.slices = 3 + Math.round(9 * complexity); // Complexity varies 0-1, so slices vary 3-12
-
-        // Reinitialize buffers
+        this.slices = 3 + Math.round(9 * complexity);
         this.initBuffers();
-        this.initNormalVizBuffers();
     }
 }
