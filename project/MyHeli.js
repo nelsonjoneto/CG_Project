@@ -57,33 +57,87 @@ export class MyHelicopter extends CGFobject {
 
         this.speed = 0; // magnitude da velocidade
         this.pitch = 0; // inclinação
-        this.state = "cruising"; // landed | taking_off | cruising | landing
-        this.position = vec3.fromValues(0, 1, 0); // deve estar compatível com a altura do heliporto
-
-        console.log("Posição do helicóptero:", this.position);
+        this.state = "landed"; // landed | taking_off | cruising | landing
+        this.rotorSpeed = 0;
+        this.bucketVisible = false;
+        this.position = vec3.fromValues(0, 0, 0); // deve estar compatível com a altura do heliporto
 
     }
+        //console.log("Posição do helicóptero:", this.position);
+
+    
 
     update(t) {
-        const dt = this.scene.speedFactor * 0.05;
+    const dt = this.scene.speedFactor * 0.05;
 
+    if (this.state !== "landed") {
         this.mainRotorAngle += this.rotorSpeed;
         this.tailRotorAngle += this.rotorSpeed * 4;
-
-        if (this.state === "cruising") {
-            // atualiza velocidade com orientação atual
-            if (!isNaN(this.orientation) && !isNaN(this.speed)) {
-                const dir = vec3.fromValues(Math.sin(this.orientation), 0, Math.cos(this.orientation));
-                vec3.normalize(dir, dir);
-                vec3.scale(this.velocity, dir, this.speed);
-                vec3.scaleAndAdd(this.position, this.position, this.velocity, dt);
-            }
-        }
-
-        // inclinação gradual baseada na velocidade
-        this.pitch = this.speed > 0 ? -Math.min(0.3, this.speed * 0.2) :
-                    this.speed < 0 ? Math.min(0.3, -this.speed * 0.2) : 0;
     }
+
+    if (this.state === "cruising") {
+        if (!isNaN(this.orientation) && !isNaN(this.speed)) {
+            const dir = vec3.fromValues(Math.cos(this.orientation), 0, -Math.sin(this.orientation));
+            vec3.normalize(dir, dir);
+            vec3.scale(this.velocity, dir, this.speed);
+            vec3.scaleAndAdd(this.position, this.position, this.velocity, dt);
+        }
+    }
+
+    if (this.state === "taking_off") {
+        this.position[1] += 0.1 * this.scene.speedFactor;
+        if (this.position[1] >= 5) {
+            this.position[1] = 5;
+            this.state = "cruising";
+            this.bucketVisible = true;
+        }
+    }
+
+    if (this.state === "landing") {
+    const landingSpeed = 0.1 * this.scene.speedFactor;
+    const landingTarget = vec3.fromValues(0, 0, 0);
+
+    
+    this.speed = 0;
+    vec3.copy(this.velocity, vec3.fromValues(0, 0, 0));
+
+    // Passo 1: mover horizontalmente (X,Z) com lerp
+    const horizontalVec = vec3.fromValues(this.position[0], 0, this.position[2]);
+    const targetXZ = vec3.fromValues(landingTarget[0], 0, landingTarget[2]);
+    const distXZ = vec3.distance(horizontalVec, targetXZ);
+
+    if (distXZ > 0.05) {
+        const newXZ = vec3.create();
+        vec3.lerp(newXZ, horizontalVec, targetXZ, 0.1);
+        this.position[0] = newXZ[0];
+        this.position[2] = newXZ[2];
+    }
+
+    // Etspa 2: descida em Y
+    else if (this.position[1] > 0.05) {
+        this.position[1] -= landingSpeed;
+        if (this.position[1] < 0) this.position[1] = 0;
+    }
+
+    // passo 3: pouso feito
+    else {
+        vec3.copy(this.position, landingTarget);
+        this.state = "landed";
+        this.rotorSpeed = 0;
+        this.bucketVisible = false;
+        console.log("Helicóptero aterrado com sucesso (fixo).");
+    }
+}
+
+
+
+    // inclinação gradual baseada na velocidade
+    this.pitch = this.speed > 0 ? -Math.min(0.3, this.speed * 0.2) :
+                this.speed < 0 ? Math.min(0.3, -this.speed * 0.2) : 0;
+
+    console.log("Update pos:", this.position, "speed:", this.speed, "state:", this.state);
+    console.log("Velocity:", this.velocity, "Position:", this.position);
+}
 
     turn(v) {
         this.orientation += v * 0.05 * this.scene.speedFactor;
@@ -91,17 +145,37 @@ export class MyHelicopter extends CGFobject {
 
     accelerate(v) {
         this.speed += v * 0.02 * this.scene.speedFactor;
-        // limites de velocidade
         this.speed = Math.max(Math.min(this.speed, 0.5), -0.3);
     }
 
+    takeOff() {
+        if (this.state === "landed") {
+            this.state = "taking_off";
+            this.rotorSpeed = 0.3;
+        }
+    }
+
+    land() {
+    if (this.state === "cruising") {
+        this.state = "landing";
+        this.speed = 0;
+        vec3.copy(this.velocity, vec3.fromValues(0, 0, 0)); // anula movimento
+    }
+}
+
+    
+
     reset() {
-        this.position = vec3.fromValues(0, 9, 0);
+        this.position = vec3.fromValues(0, 0, 0);
         this.orientation = 0;
         this.velocity = vec3.fromValues(0, 0, 0);
+        vec3.copy(this.velocity, vec3.fromValues(0, 0, 0));
         this.speed = 0;
         this.state = "landed";
         this.pitch = 0;
+        this.rotorSpeed = 0;
+        this.bucketVisible = false;
+        this.readyToDescend = false;
     }
 
     display() {
@@ -154,11 +228,12 @@ export class MyHelicopter extends CGFobject {
         this.scene.popMatrix();
 
 
-        this.scene.pushMatrix();
-        this.scene.translate(0, 0.45, 0); // posição relativa abaixo do helicóptero
-        this.bucket.display();
-        this.scene.popMatrix();
-
+        if (this.bucketVisible) {
+            this.scene.pushMatrix();
+            this.scene.translate(0, 0.45, 0);
+            this.bucket.display();
+            this.scene.popMatrix();
+        }
         // ESQUIS (lado direito e esquerdo)
         const skiY = -0.77;      // Altura abaixo do corpo
         const skiZ = 0.35;      // Distância lateral

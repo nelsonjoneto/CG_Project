@@ -7,6 +7,7 @@ import { MyUnitCube } from "./MyUnitCube.js";
 import { MyTree } from "./MyTree.js";
 import { MyForest } from "./MyForest.js";
 
+
 /**
  * MyScene
  * @constructor
@@ -54,6 +55,8 @@ export class MyScene extends CGFscene {
     this.displayAxis = false;
     this.displayPanorama = true;
     this.displayPlane = true;
+    this.speedFactor = 5.0;
+
 
   }
 
@@ -82,7 +85,18 @@ export class MyScene extends CGFscene {
     var keysPressed = false;
 
     const helicopter = this.building?.modules[1]?.helicopter;
-    if (!helicopter || helicopter.state !== "cruising") return;
+    if (!helicopter) return;
+
+    
+    console.log("Helicopter ref:", this.building?.modules[1]?.helicopter);
+    console.log("Checking keys... state:", helicopter.state, "speed:", helicopter.speed);
+
+    if (this.gui.isKeyPressed("KeyP")) {
+      text += " P ";
+      if (helicopter.state === "landed")
+          helicopter.takeOff();
+      keysPressed = true;
+    }
 
     if (this.gui.isKeyPressed("KeyW")) {
         text += " W ";
@@ -114,11 +128,23 @@ export class MyScene extends CGFscene {
         keysPressed = true;
     }
 
+    if (this.gui.isKeyPressed("KeyL")) {
+      text += " L ";
+      if (helicopter.state === "cruising") {
+          helicopter.land();
+      }
+      keysPressed = true;
+    }
+    
+
     if (keysPressed)
         console.log(text);
+
+    console.log("Checking keys... state:", helicopter.state, "speed:", helicopter.speed);
   }
 
   update(t) { 
+    console.log("UPDATE called");
     this.checkKeys();
 
     if (this.building && this.building.modules[1])

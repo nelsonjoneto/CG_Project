@@ -1,4 +1,5 @@
 import { CGFinterface, dat } from '../lib/CGF.js';
+import { CGFscene } from '../lib/CGF.js';
 
 /**
 * MyInterface
@@ -20,7 +21,7 @@ export class MyInterface extends CGFinterface {
         this.gui.add(this.scene, 'displayAxis').name('Display Axis');
         this.gui.add(this.scene, 'displayPlane').name("Display Plane");
         this.gui.add(this.scene, 'displayPanorama').name("Display Panorama");
-        //this.gui.add(this.scene, 'speedFactor', 0.1, 3).name("Speed Factor");
+        this.gui.add(this.scene, 'speedFactor', 0.1, 3).name("Speed Factor");
 
         
         this.initKeys();
