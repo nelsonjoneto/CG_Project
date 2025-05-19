@@ -98,12 +98,11 @@ export class MyScene extends CGFscene {
   }
 
   update(t) {
-    if (!this.lastTime) this.lastTime = t;
-    const delta_t = (t - this.lastTime) / 1000;
-    this.lastTime = t;
+      if (!this.lastTime) this.lastTime = t;
+      const delta_t = t - this.lastTime;
+      this.lastTime = t;
 
-    this.checkKeys(delta_t);
-    this.helicopter.update(delta_t);
+      if (this.fire) this.fire.update(delta_t);
   }
 
   setDefaultAppearance() {
