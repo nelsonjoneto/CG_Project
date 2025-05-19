@@ -31,8 +31,9 @@ export class MyForest extends CGFobject {
                 // Randomize tree parameters within defined ranges
                 const rotationAngle = Math.random() * 30 - 15;           // [-15°, +15°]
                 const rotationAxis  = Math.random() < 0.5 ? 'x' : 'z';  
-                const trunkRadius   = 0.2 + Math.random() * 0.3;        // [0.2, 0.5]
-                const totalHeight   = 3 + Math.random() * 3;            // [3, 6]
+                // Inside the initForest() method
+                const trunkRadius = 0.6 + Math.random() * 1.3;        // [0.4, 1.0]
+                const totalHeight = 12 + Math.random() * 6;            // [6, 12]
                 const greenTone     = 0.4 + Math.random() * 0.4;        // [0.4, 0.8]
                 const crownColor     = [0.05, greenTone, 0.05];          // varying green
 
@@ -65,6 +66,7 @@ export class MyForest extends CGFobject {
 
     display() {
         this.scene.pushMatrix();
+        //this.scene.translate(-90, 0, 0);
         for (const entry of this.trees) {
             this.scene.pushMatrix();
             this.scene.translate(entry.x, 0, entry.z);

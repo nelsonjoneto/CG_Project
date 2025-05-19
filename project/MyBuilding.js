@@ -56,21 +56,27 @@ export class MyBuilding extends CGFobject {
     }
 
     display() {
+        // Push the entire building back by -30 in the Z-axis
+        this.scene.pushMatrix();
+        //this.scene.translate(0, 0, -100);
+    
         // Display left module
         this.scene.pushMatrix();
         this.scene.translate(-this.moduleSpacing, 0, 0);
         this.modules[0].display();
         this.scene.popMatrix();
-
+    
         // Display main module
         this.scene.pushMatrix();
         this.modules[1].display();
         this.scene.popMatrix();
-
+    
         // Display right module
         this.scene.pushMatrix();
         this.scene.translate(this.moduleSpacing, 0, 0);
         this.modules[2].display();
+        this.scene.popMatrix();
+    
         this.scene.popMatrix();
     }
 }

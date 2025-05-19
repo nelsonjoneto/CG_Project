@@ -25,7 +25,7 @@ export class MyPanorama extends CGFobject {
         
         // Follow camera position
         const camPos = this.scene.camera.position;
-        this.scene.translate(camPos[0], camPos[1], camPos[2]);
+        this.scene.translate(camPos[0], camPos[1] - 60, camPos[2]);
         
         // Display the sphere after applying material
         this.sphere.display();
