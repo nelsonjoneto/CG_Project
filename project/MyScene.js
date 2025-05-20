@@ -142,7 +142,7 @@ export class MyScene extends CGFscene {
     if (this.displayForest) {} 
     //this.module.display();
     //this.forest.display();
-    //this.fire.display();
+    this.fire.display();
     //this.helicopter.display();
     
   }
