@@ -74,7 +74,7 @@ export class MyFire extends CGFobject {
     update(t) {
         // Store accumulated time as a class property
         if (!this.accumulatedTime) this.accumulatedTime = 0;
-        this.accumulatedTime += t / 500; // Convert milliseconds to seconds
+        this.accumulatedTime += t / 800; // Convert milliseconds to seconds
         
         this.flameShader.setUniformsValues({
             timeFactor: this.accumulatedTime

@@ -98,11 +98,27 @@ export class MyScene extends CGFscene {
   }
 
   update(t) {
-      if (!this.lastTime) this.lastTime = t;
+      if (!this.lastTime) {
+          this.lastTime = t;
+          this.accumulatedTime = 0;
+      }
+      
       const delta_t = t - this.lastTime;
       this.lastTime = t;
-
+      
+      // Update timeFactor similar to TP5
+      this.accumulatedTime += delta_t;
+      
+      // Update ground shader
+      if (this.ground) {
+          this.ground.groundShader.setUniformsValues({
+              timeFactor: this.accumulatedTime / 100 % 100
+          });
+      }
+      
+      // Update other elements
       if (this.fire) this.fire.update(delta_t);
+      //if (this.helicopter) this.helicopter.update(delta_t);
   }
 
   setDefaultAppearance() {
