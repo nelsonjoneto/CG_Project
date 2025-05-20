@@ -18,7 +18,6 @@ export class MyGround extends CGFobject {
         this.grassTex = new CGFtexture(scene, "textures/seamless_grass.jpg");
         this.waterTex = new CGFtexture(scene, "textures/waterTex.jpg");
         this.maskTex = new CGFtexture(scene, "textures/mask.png");
-        this.waterMap = new CGFtexture(scene, "textures/waterMap.jpg");
 
         // Set default texture and wrapping mode
         this.groundMaterial.setTexture(this.grassTex);
@@ -31,7 +30,6 @@ export class MyGround extends CGFobject {
             uSampler: 0,    // Grass texture
             uSampler2: 1,   // Water texture
             lakeMask: 2,    // Mask
-            waterMap: 3,    // Height/normal map
             timeFactor: 0,
             textureRepeat: textureRepeat
         });
@@ -56,12 +54,6 @@ export class MyGround extends CGFobject {
         // Bind additional textures to their respective units
         this.waterTex.bind(1);
         this.maskTex.bind(2);
-        this.waterMap.bind(3);
-        
-        // Update shader uniforms to include the waterMap as a uniform
-        this.groundShader.setUniformsValues({
-            waterMap: 3
-        });
         
         // Display the plane
         this.plane.display();
