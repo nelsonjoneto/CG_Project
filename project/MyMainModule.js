@@ -1,8 +1,13 @@
-import { CGFobject, CGFappearance, CGFtexture } from '../lib/CGF.js';
-import { MyHelicopter } from './MyHeli.js';
+import { CGFobject, CGFappearance, CGFtexture, CGFshader } from '../lib/CGF.js';
 import { MyUnitCube } from './MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
 
+// Heliport animation states
+const HeliportState = {
+    NEUTRAL: 0,
+    TAKEOFF: 1,
+    LANDING: 2
+};
 
 // Main module class
 export class MyMainModule extends CGFobject {
@@ -10,11 +15,30 @@ export class MyMainModule extends CGFobject {
         super(scene);
         this.scene = scene;
 
-        this.helicopter = new MyHelicopter(scene);
-
-        //Textures
+        // Textures
         this.doorTexture = new CGFtexture(this.scene, "textures/door.png");
-        this.heliportTexture = new CGFtexture(this.scene, "textures/heliport.png");
+        this.heliportTexture = new CGFtexture(this.scene, "textures/H.png");
+        this.upTexture = new CGFtexture(this.scene, "textures/UP.png");
+        this.downTexture = new CGFtexture(this.scene, "textures/DOWN.png");
+
+        // Current heliport state
+        this.heliportState = HeliportState.NEUTRAL;
+        this.lastHeliportStateChange = 0;
+        
+        // Create heliport shader
+        this.heliportShader = new CGFshader(
+            this.scene.gl,
+            "shaders/heliport.vert",
+            "shaders/heliport.frag"
+        );
+        
+        // Initialize shader uniforms
+        this.heliportShader.setUniformsValues({
+            uBaseTexture: 0,
+            uManeuverTexture: 1,
+            timeFactor: 0,
+            isAnimating: 0
+        });
 
         // Dimensions
         this.width = width;
@@ -59,6 +83,48 @@ export class MyMainModule extends CGFobject {
         }
     }
 
+    // Update method to be called from scene's update
+    update(t) {
+        // Update shader time factor for animation
+        this.heliportShader.setUniformsValues({
+            timeFactor: t * 0.001 % 1000
+        });
+        
+        // Reset to neutral state after 5 seconds of animation
+        if (this.heliportState !== HeliportState.NEUTRAL) {
+            if (t - this.lastHeliportStateChange > 5000) {
+                this.setHeliportState(HeliportState.NEUTRAL);
+            }
+        }
+    }
+    
+    // Method to set heliport state
+    setHeliportState(state) {
+        this.heliportState = state;
+        this.lastHeliportStateChange = Date.now();
+        
+        // Update shader uniforms based on state
+        if (state === HeliportState.NEUTRAL) {
+            this.heliportShader.setUniformsValues({
+                isAnimating: 0
+            });
+        } else {
+            this.heliportShader.setUniformsValues({
+                isAnimating: 1
+            });
+        }
+    }
+    
+    // Method to get the helipad position for the helicopter's initial position
+    getHelipadPosition() {
+        // Calculate the position on top of the main module
+        return {
+            x: 0,           // Centered horizontally
+            y: this.totalHeight, // Top of the building
+            z: 0            // Centered in depth
+        };
+    }
+
     displayStructure() {
         this.scene.pushMatrix();
         this.scene.scale(this.width, this.totalHeight, this.depth);
@@ -84,22 +150,36 @@ export class MyMainModule extends CGFobject {
     }
 
     displayHelipad() {
+        // Save current shader
+        const currentShader = this.scene.activeShader;
+        
+        // Use our heliport shader
+        this.scene.setActiveShader(this.heliportShader);
+        
+        // Bind appropriate textures based on state
+        this.heliportTexture.bind(0); // Base texture is always H
+        
+        // Bind the appropriate maneuver texture
+        if (this.heliportState === HeliportState.TAKEOFF) {
+            this.upTexture.bind(1);
+        } else if (this.heliportState === HeliportState.LANDING) {
+            this.downTexture.bind(1);
+        } else {
+            // In neutral state, just bind the base texture again
+            this.heliportTexture.bind(1);
+        }
+        
         this.scene.pushMatrix();
         this.scene.translate(0, this.totalHeight + 0.01, 0);
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
         
         this.helipad.display();
         this.scene.popMatrix();
-    }
-
-    displayHelicopter() {
-        this.scene.pushMatrix();
-        this.scene.translate(0, this.totalHeight + 0.8, 0); // Posicione o helicóptero no heliponto
-        this.helicopter.display();
-        this.scene.popMatrix();
+        
+        // Restore original shader
+        this.scene.setActiveShader(currentShader);
     }
     
-
     display() {
         this.scene.pushMatrix();
         
@@ -112,7 +192,7 @@ export class MyMainModule extends CGFobject {
         // Special elements
         this.displayDoor();
         this.displayHelipad();
-        this.displayHelicopter();
+        
         this.scene.popMatrix();
     }
 }

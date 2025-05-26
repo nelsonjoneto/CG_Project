@@ -54,6 +54,17 @@ export class MyBuilding extends CGFobject {
             )
         ];
     }
+    
+    // Method to get the helipad position for helicopter positioning
+    getHelipadPosition() {
+        // Get helipad position from the main module (index 1)
+        return this.modules[1].getHelipadPosition();
+    }
+
+    update(t) {
+        // Update animation for main module
+        this.modules[1].update(t);
+    }
 
     display() {
         // Push the entire building back by -30 in the Z-axis

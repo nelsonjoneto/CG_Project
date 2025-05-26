@@ -12,6 +12,9 @@ export class MyScene extends CGFscene {
     super();
     this.speedFactor = 1;
     this.lastTime = 0;
+    this.elapsedTime = 0; // Track elapsed time
+    this.takeoffTriggered = false; // Flag to track if takeoff was triggered
+    this.landingTriggered = false; // Flag to track if landing was triggered
   }
 
   init(application) {
@@ -35,11 +38,14 @@ export class MyScene extends CGFscene {
     this.axis = new CGFaxis(this, 20, 1);
     this.ground = new MyGround(this);
     this.panorama = new MyPanorama(this, this.panoramaTexture);
-    this.module = new MyBuilding(this,15, 2, 2, 
-      [this.windowTexture, this.windowTexture, this.windowTexture],[0.8, 0.8, 0.8, 1.0]);
-    //this.forest = new MyForest(this, 10, 10, 60, 60);
-    this.forest = new MyForest(this, 8, 8, 60, 60);
-    this.helicopter = new MyHelicopter(this);  
+    // First create the building
+    this.module = new MyBuilding(this, 15, 2, 2, 
+      [this.windowTexture, this.windowTexture, this.windowTexture],
+      [0.8, 0.8, 0.8, 1.0]);
+      
+    // Then create the helicopter with the building's helipad position
+    const helipadPos = this.module.getHelipadPosition();
+    this.helicopter = new MyHelicopter(this, helipadPos);  
 
     this.fire = new MyFire(this, 3, 3, 60, 60);
 
@@ -75,51 +81,80 @@ export class MyScene extends CGFscene {
     );
   }
 
-  checkKeys(delta_t) {
-    const speedFactor = this.speedFactor;
+    checkKeys(delta_t) {
+        if (this.helicopter) {
+            // Scale controls by delta_t and speedFactor for smooth, consistent movement
+            const accelFactor = 0.001 * this.speedFactor;
+            const turnFactor = 0.002 * this.speedFactor;
+            
+            // Track forward/backward key state
+            let forwardKeyPressed = false;
+            let turnKeyPressed = false;
+            
+            // Forward/backward movement
+            if (this.gui.isKeyPressed("KeyW")) {
+                this.helicopter.accelerate(accelFactor * delta_t);
+                forwardKeyPressed = true;
+            } else if (this.gui.isKeyPressed("KeyS")) {
+                this.helicopter.accelerate(-accelFactor * delta_t);
+                forwardKeyPressed = true;
+            } else {
+                // No forward/backward keys pressed, notify helicopter
+                this.helicopter.setForwardAccelerating(false);
+            }
+            
+            // Turning movement
+            if (this.gui.isKeyPressed("KeyA")) {
+                this.helicopter.turn(-turnFactor * delta_t);
+                turnKeyPressed = true;
+            } else if (this.gui.isKeyPressed("KeyD")) {
+                this.helicopter.turn(turnFactor * delta_t);
+                turnKeyPressed = true;
+            } else {
+                // No turning keys pressed, notify helicopter
+                this.helicopter.setTurning(false);
+            }
+            
+            // Special controls remain the same
+            if (this.gui.isKeyPressed("KeyR"))
+                this.helicopter.resetPosition();
+            if (this.gui.isKeyPressed("KeyP") && this.helicopter.isLanded)
+                this.helicopter.startAscent();
+            if (this.gui.isKeyPressed("KeyL") && !this.helicopter.isLanded)
+                this.helicopter.startDescent();
+        }
+    }
 
-    // Movement controls
-    if (this.gui.isKeyPressed("KeyW"))
-        this.helicopter.accelerate(2 * speedFactor * delta_t);
-    if (this.gui.isKeyPressed("KeyS"))
-        this.helicopter.accelerate(-2 * speedFactor * delta_t);
-    if (this.gui.isKeyPressed("KeyA"))
-        this.helicopter.turn(-1 * speedFactor * delta_t);
-    if (this.gui.isKeyPressed("KeyD"))
-        this.helicopter.turn(1 * speedFactor * delta_t);
-
-    // Special controls
-    if (this.gui.isKeyPressed("KeyR"))
-        this.helicopter.resetPosition();
-    if (this.gui.isKeyPressed("KeyP") && this.helicopter.isLanded)
-        this.helicopter.startAscent();
-    if (this.gui.isKeyPressed("KeyL") && !this.helicopter.isLanded)
-        this.helicopter.startDescent();
-  }
-
-  update(t) {
-      if (!this.lastTime) {
-          this.lastTime = t;
-          this.accumulatedTime = 0;
-      }
-      
-      const delta_t = t - this.lastTime;
-      this.lastTime = t;
-      
-      // Update timeFactor similar to TP5
-      this.accumulatedTime += delta_t;
-      
-      // Update ground shader
-      if (this.ground) {
-          this.ground.groundShader.setUniformsValues({
-              timeFactor: this.accumulatedTime / 100 % 100
-          });
-      }
-      
-      // Update other elements
-      if (this.fire) this.fire.update(delta_t);
-      //if (this.helicopter) this.helicopter.update(delta_t);
-  }
+    update(t) {
+        if (!this.lastTime) {
+            this.lastTime = t;
+            this.accumulatedTime = 0;
+            this.elapsedTime = 0;
+        }
+        
+        const delta_t = t - this.lastTime;
+        this.lastTime = t;
+        
+        // Update timeFactor for shaders
+        this.accumulatedTime += delta_t;
+        
+        // Update ground shader
+        if (this.ground) {
+            this.ground.groundShader.setUniformsValues({
+                timeFactor: this.accumulatedTime / 100 % 100
+            });
+        }
+        
+        // Update other elements
+        if (this.fire) this.fire.update(delta_t);
+        if (this.helicopter) this.helicopter.update(delta_t);
+        
+        // Process keyboard input
+        this.checkKeys(delta_t);
+        
+        // Update elapsed time
+        this.elapsedTime += delta_t;
+    }
 
   setDefaultAppearance() {
     this.setAmbient(0.5, 0.5, 0.5, 1.0);
@@ -142,8 +177,9 @@ export class MyScene extends CGFscene {
     if (this.displayForest) {} 
     //this.module.display();
     //this.forest.display();
-    this.fire.display();
-    //this.helicopter.display();
+    //this.fire.display();
+    this.helicopter.display();
+    this.module.display();
     
   }
 }

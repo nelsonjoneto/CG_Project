@@ -4,7 +4,7 @@ import { MyPlane } from './MyPlane.js';
 export class MyGround extends CGFobject {
     constructor(scene) {
         super(scene);
-        const textureRepeat = 10;
+        const textureRepeat = 100;
 
         this.textureRepeat = textureRepeat;
         this.plane = new MyPlane(scene, textureRepeat, 0, textureRepeat, 0, textureRepeat);
