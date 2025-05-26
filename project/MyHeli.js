@@ -17,6 +17,14 @@ const HeliState = {
     AUTO_RETURNING: 'auto_returning'
 };
 
+// New enum for auto-return phases
+const AutoReturnPhase = {
+    TURNING: 'turning',         // Face toward target
+    ACCELERATING: 'accelerating', 
+    APPROACHING: 'approaching',
+    ORIENTING: 'orienting'      // Final phase to align with initial orientation
+};
+
 export class MyHelicopter extends CGFobject {
     constructor(scene, initialPosition = null) {
         super(scene);
@@ -78,6 +86,13 @@ export class MyHelicopter extends CGFobject {
         // Target for auto-return
         this.targetPosition = { x: 0, z: 0 };
 
+        // Auto-return state tracking
+        this.autoReturnPhase = AutoReturnPhase.TURNING;
+        this.autoReturnStartTime = 0;
+    
+        // Store initial orientation for reset (typically 0)
+        this.initialOrientation = 0;
+    
         // Create helicopter components
         this.initializeComponents();
     }
@@ -179,8 +194,15 @@ export class MyHelicopter extends CGFobject {
             -this.config.maxVerticalSpeed
         );
         this.position.y += this.verticalSpeed;
-        if (this.position.y <= 0.8) {
-            this.position.y = 0.8;
+        
+        // Change this check to use the exact initial y position
+        if (this.position.y <= this.initialPosition.y) {
+            // Set exact position and orientation values when landing
+            this.position.x = this.initialPosition.x;
+            this.position.y = this.initialPosition.y; // Exact initial y value
+            this.position.z = this.initialPosition.z;
+            this.orientation = 0; // Reset to default orientation
+            
             this.verticalSpeed = 0;
             this.state = HeliState.LANDED;
             this.isBucketDeployed = false;
@@ -189,43 +211,173 @@ export class MyHelicopter extends CGFobject {
 
     // --- Improved auto return using the same movement logic as manual controls ---
     updateAutoReturn() {
+        // Calculate distance to target
         const dx = this.targetPosition.x - this.position.x;
         const dz = this.targetPosition.z - this.position.z;
         const distance = Math.sqrt(dx*dx + dz*dz);
-
-        if (distance < 1) {
-            this.state = HeliState.DESCENDING;
-            this.verticalSpeed = 0;
+        
+        // Check if we're in the orientation phase
+        if (this.autoReturnPhase === AutoReturnPhase.ORIENTING) {
+            this._handleOrientingPhase();
             return;
         }
-
-        const targetOrientation = Math.atan2(dx, dz);
-        const orientationDiff = this.normalizeAngle(targetOrientation - this.orientation);
-
-        const baseAccelValue = 0.001;
-        const baseTurnValue = 0.002;
-
-        // Turn towards target if needed
-        if (Math.abs(orientationDiff) > 0.05) {
-            const turnDir = Math.sign(orientationDiff);
-            this.turn(turnDir * baseTurnValue * this.scene.speedFactor);
+        
+        // Target reached - start orientation phase
+        if (distance < 0.3) {
+            // Snap exactly to target position
+            this.position.x = this.targetPosition.x;
+            this.position.z = this.targetPosition.z;
+            this.speed = 0;
+            this.velocity = { x: 0, y: 0, z: 0 };
+            
+            // Start orientation phase before descent
+            this.autoReturnPhase = AutoReturnPhase.ORIENTING;
             this.isTurning = true;
             this.isAccelerating = false;
-        } else {
-            // Facing target, accelerate forward
-            this.isTurning = false;
-            this.lastTurnValue = 0;
-            this.accelerate(baseAccelValue * this.scene.speedFactor);
-            this.isAccelerating = true;
-            // Slow down as we approach
-            if (distance < 10) {
-                const brakeFactor = Math.max(0.3, distance / 10);
-                this.speed *= brakeFactor;
-            }
+            console.log("Reached target position, aligning orientation");
+            return;
         }
-        // Position is updated in updateCruising
+        
+        // Standard movement phases
+        switch (this.autoReturnPhase) {
+            case AutoReturnPhase.TURNING:
+                this._handleTurningPhase(dx, dz);
+                break;
+                
+            case AutoReturnPhase.ACCELERATING:
+                this._handleAcceleratingPhase(distance);
+                break;
+                
+            case AutoReturnPhase.APPROACHING:
+                this._handleApproachingPhase(distance);
+                break;
+        }
+        
+        // Position and tilt updates
+        this.position.x += this.velocity.x;
+        this.position.z += this.velocity.z;
+        
+        this.tiltAngle = -1.5 * this.speed;
+        this.tiltAngle = Math.max(-this.config.maxTiltAngle, 
+                     Math.min(this.config.maxTiltAngle, this.tiltAngle));
     }
     // ---------------------------------------------------------------------------
+
+    // Helper methods for cleaner code structure
+    _handleTurningPhase(dx, dz) {
+        // Stop forward movement during turn
+        this.speed = 0;
+        this.velocity = { x: 0, y: 0, z: 0 };
+        this.isAccelerating = false;
+        
+        // Calculate angle to target - use proper atan2 order to match velocity calculations
+        const targetOrientation = Math.atan2(-dx, dz); 
+        
+        // Calculate the angle difference 
+        let angleDiff = this.normalizeAngle(targetOrientation - this.orientation);
+        
+        // Check if we're close enough to the target orientation
+        if (Math.abs(angleDiff) < 0.02) {
+            // Snap exactly to target orientation
+            this.orientation = targetOrientation;
+            this.isTurning = false;
+            this.autoReturnPhase = AutoReturnPhase.ACCELERATING;
+            console.log("Aligned with target, starting movement");
+        } else {
+            // Turn in the most efficient direction
+            const turnDirection = angleDiff > 0 ? 1 : -1;
+            const turnAmount = Math.min(Math.abs(angleDiff), 0.03 * this.scene.speedFactor);
+            this.orientation = this.normalizeAngle(this.orientation + turnDirection * turnAmount);
+            this.isTurning = true;
+        }
+    }
+
+    _handleAcceleratingPhase(distance) {
+        this.isTurning = false;
+        this.isAccelerating = true;
+        
+        // Set speed based on distance
+        if (distance > 5) {
+            this.speed = 0.25; // Faster when far away
+        } else {
+            this.speed = 0.15; // Medium speed when closer
+        }
+        
+        // Update velocity
+        this.updateVelocityDirection();
+        
+        // Switch to approach phase when close
+        if (distance < 2) {
+            console.log("Close to target, slowing down for final approach");
+            this.autoReturnPhase = AutoReturnPhase.APPROACHING;
+        }
+    }
+
+    _handleApproachingPhase(distance) {
+        this.isTurning = false;
+        this.isAccelerating = true;
+        
+        // Variable speed based on distance for smooth approach
+        this.speed = Math.min(0.06, distance * 0.12);
+        this.updateVelocityDirection();
+        
+        // Even slower for very close approach
+        if (distance < 0.5) {
+            this.speed = Math.min(0.03, distance * 0.06);
+            this.updateVelocityDirection();
+        }
+    }
+
+    // New method to handle orientation reset before descent
+    _handleOrientingPhase() {
+        // Stop all forward movement
+        this.speed = 0;
+        this.velocity = { x: 0, y: 0, z: 0 };
+        this.isAccelerating = false;
+        
+        // Calculate the angle difference to initial orientation
+        let angleDiff = this.normalizeAngle(this.initialOrientation - this.orientation);
+        
+        // Check if we're close enough to the initial orientation
+        if (Math.abs(angleDiff) < 0.02) {
+            // Snap exactly to initial orientation
+            this.orientation = this.initialOrientation;
+            this.isTurning = false;
+            
+            // Start descent
+            this.state = HeliState.DESCENDING;
+            this.verticalSpeed = 0;
+            console.log("Orientation reset, starting descent");
+        } else {
+            // Turn in the most efficient direction
+            const turnDirection = angleDiff > 0 ? 1 : -1;
+            const turnAmount = Math.min(Math.abs(angleDiff), 0.03 * this.scene.speedFactor);
+            this.orientation = this.normalizeAngle(this.orientation + turnDirection * turnAmount);
+            this.isTurning = true;
+        }
+    }
+
+    // Keep the original updateDescent method but with improved behavior
+    updateDescent(dt) {
+        const verticalDeceleration = this.config.verticalAcceleration * dt * 1000 * this.scene.speedFactor;
+        this.verticalSpeed = Math.max(
+            this.verticalSpeed - verticalDeceleration,
+            -this.config.maxVerticalSpeed
+        );
+        this.position.y += this.verticalSpeed;
+        
+        // Land when reaching initial height
+        if (this.position.y <= this.initialPosition.y) {
+            // Set exact position values when landing
+            this.position = { ...this.initialPosition };
+            this.orientation = this.initialOrientation;
+            
+            this.verticalSpeed = 0;
+            this.state = HeliState.LANDED;
+            this.isBucketDeployed = false;
+            this.autoReturnPhase = AutoReturnPhase.TURNING; // Reset for next time
+        }
+    }
 
     normalizeAngle(angle) {
         while (angle > Math.PI) angle -= 2 * Math.PI;
@@ -322,6 +474,7 @@ export class MyHelicopter extends CGFobject {
             };
             this.state = HeliState.AUTO_RETURNING;
             this.speed = 0;
+            this.autoReturnPhase = AutoReturnPhase.TURNING; // Reset phase
         }
     }
     
