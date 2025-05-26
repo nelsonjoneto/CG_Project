@@ -74,6 +74,7 @@ export class MyScene extends CGFscene {
     }
     initCameras() {
         this.camera = new CGFcamera(0.4, 0.1, 500, vec3.fromValues(10, 10, 10), vec3.fromValues(0, 0, 0));
+        
     }
 
     hexToRgbA(hex)

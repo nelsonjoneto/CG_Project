@@ -137,20 +137,48 @@ export class MyHelicopter extends CGFobject {
 
     updateRotors(dt) {
         if (this.state === HeliState.LANDED) return;
-        const baseMainRotorSpeed = this.config.baseRotorSpeed * 0.7;
-        const baseTailRotorSpeed = this.config.baseRotorSpeed * 1.2;
-        let mainRotorSpeed = baseMainRotorSpeed;
-        let tailRotorSpeed = baseTailRotorSpeed;
-        if (this.state === HeliState.CRUISING) {
-            const speedRatio = Math.abs(this.speed) / this.config.maxSpeed;
-            mainRotorSpeed += 15.0 * speedRatio * this.scene.speedFactor;
-            tailRotorSpeed += 60.0 * Math.abs(this.lastTurnValue) * this.scene.speedFactor;
-        } else if (this.state === HeliState.ASCENDING) {
-            mainRotorSpeed += 8.0 * this.scene.speedFactor;
-        } else if (this.state === HeliState.DESCENDING) {
-            const descentFactor = Math.max(0.5, 1 - 0.2 * this.scene.speedFactor);
-            mainRotorSpeed *= descentFactor;
+        
+        // Base rotation speeds
+        let mainRotorSpeed = this.config.baseRotorSpeed * 0.7;
+        let tailRotorSpeed = this.config.baseRotorSpeed * 1.2;
+        
+        // Adjust speeds based on helicopter state
+        switch (this.state) {
+            case HeliState.CRUISING:
+                // Increase main rotor speed based on forward speed
+                const speedRatio = Math.abs(this.speed) / this.config.maxSpeed;
+                mainRotorSpeed += 5.0 * speedRatio * this.scene.speedFactor;
+                
+                // Increase tail rotor speed during turning (more subtle effect)
+                if (this.isTurning) {
+                    tailRotorSpeed += 4.0 * Math.abs(this.currentTurnRate) * this.scene.speedFactor;
+                }
+                break;
+                
+            case HeliState.ASCENDING:
+                // Faster main rotor during ascent
+                mainRotorSpeed += 8.0 * this.scene.speedFactor;
+                break;
+                
+            case HeliState.DESCENDING:
+                // Slower rotors during descent
+                const descentFactor = Math.max(0.5, 1 - 0.2 * this.scene.speedFactor);
+                mainRotorSpeed *= descentFactor;
+                break;
+                
+            case HeliState.AUTO_RETURNING:
+                // Similar to cruising but with a constant minimum speed
+                const autoReturnSpeedRatio = Math.max(0.5, Math.abs(this.speed) / this.config.maxSpeed);
+                mainRotorSpeed += 5.0 * autoReturnSpeedRatio * this.scene.speedFactor;
+                
+                // Slight tail rotor speed increase during auto-return turning
+                if (this.isTurning) {
+                    tailRotorSpeed += 3.0 * this.scene.speedFactor;
+                }
+                break;
         }
+        
+        // Update the rotation angles
         this.mainRotorAngle = (this.mainRotorAngle + mainRotorSpeed * dt) % (2 * Math.PI);
         this.tailRotorAngle = (this.tailRotorAngle + tailRotorSpeed * dt) % (2 * Math.PI);
     }
@@ -504,17 +532,20 @@ export class MyHelicopter extends CGFobject {
 
         this.helicopterMaterial.apply();
 
+        // Body
         this.scene.pushMatrix();
         this.scene.scale(1, 0.5, 0.5);
         this.body.display();
         this.scene.popMatrix();
 
+        // Tail
         this.scene.pushMatrix();
         this.scene.translate(-0.9, 0, 0);
         this.scene.scale(0.65, 2, 2);
         this.tail.display(this.helicopterMaterial);
         this.scene.popMatrix();
 
+        // Main rotor support
         this.scene.pushMatrix();
         this.scene.translate(0, 0.65, 0);
         this.scene.rotate(Math.PI / 2, 1, 0, 0);
@@ -522,13 +553,13 @@ export class MyHelicopter extends CGFobject {
         this.rotor.display();
         this.scene.popMatrix();
 
+        // Main rotor blades
         this.scene.pushMatrix();
         this.scene.translate(0, 0.32, 0);
-        this.scene.pushMatrix();
-        this.scene.rotate(-this.orientation, 0, 1, 0);
-        this.scene.rotate(-this.tiltAngle, 0, 0, 1);
-        this.scene.rotate(-this.sideTiltAngle, 1, 0, 0);
+        // Only apply the main rotor rotation - not countering the helicopter orientation
         this.scene.rotate(this.mainRotorAngle, 0, 1, 0);
+        
+        // Draw each blade
         for (let i = 0; i < 4; i++) {
             this.scene.pushMatrix();
             this.scene.rotate(i * Math.PI / 2, 0, 1, 0);
@@ -538,35 +569,23 @@ export class MyHelicopter extends CGFobject {
             this.scene.popMatrix();
         }
         this.scene.popMatrix();
-        this.scene.popMatrix();
 
+        // Bucket
         this.scene.pushMatrix();
         this.scene.translate(0, this.bucketY, 0);
         this.bucket.display();
         this.scene.popMatrix();
 
+        // Skis
         this.displaySkis();
 
-        this.scene.pushMatrix();
-        this.scene.translate(-2.5, 0.12, 0);
-        this.scene.scale(0.05, 0.2, 0.05);
-        this.tailConnector.display();
-        this.scene.popMatrix();
-
+        // Tail rotor assembly
         this.scene.pushMatrix();
         this.scene.translate(-2.5, 0.3, 0.04);
-        this.scene.rotate(-Math.PI, 0, 1, 0);
-        this.scene.scale(0.15, 0.15, 0.1);
-        this.tailRotor.display();
-        this.scene.popMatrix();
-
-        this.scene.pushMatrix();
-        this.scene.translate(-2.5, 0.3, 0.04);
-        this.scene.pushMatrix();
-        this.scene.rotate(-this.orientation, 0, 1, 0);
-        this.scene.rotate(-this.tiltAngle, 0, 0, 1);
-        this.scene.rotate(-this.sideTiltAngle, 1, 0, 0);
+        // Only apply the tail rotor rotation
         this.scene.rotate(this.tailRotorAngle, 0, 0, 1);
+        
+        // Draw tail rotor blades
         for (let i = 0; i < 4; i++) {
             this.scene.pushMatrix();
             this.scene.rotate(i * Math.PI / 2, 0, 0, 1);
@@ -574,7 +593,6 @@ export class MyHelicopter extends CGFobject {
             this.blade.display();
             this.scene.popMatrix();
         }
-        this.scene.popMatrix();
         this.scene.popMatrix();
 
         this.scene.popMatrix();
