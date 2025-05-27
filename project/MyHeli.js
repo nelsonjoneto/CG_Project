@@ -6,7 +6,8 @@ import { MyBlade } from './MyBlade.js';
 import { MyTail } from './MyTail.js';
 import { MyVerticalFin } from './MyVerticalFin.js';
 import { MySolidCylinder } from './MySolidCylinder.js';
-import { MyBucket } from './MyBucket.js';
+import { MyBucket } from './MyBucket_2.js'; // New bucket implementation
+import { MyRope } from './MyRope.js'; // New rope class
 
 // Helicopter states as enum
 const HeliState = {
@@ -79,9 +80,9 @@ export class MyHelicopter extends CGFobject {
         this.mainRotorAngle = 0;
         this.tailRotorAngle = 0;
         
-        // Bucket state
-        this.isBucketDeployed = false;
-        this.bucketY = 0.45;
+        // Simplified bucket state - single deployment factor from 0 to 1
+        // 0 = inside helicopter, 1 = fully deployed
+        this.bucketDeployment = 0;
         
         // Target for auto-return
         this.targetPosition = { x: 0, z: 0 };
@@ -108,7 +109,10 @@ export class MyHelicopter extends CGFobject {
         this.skiSupport = new MyUnitCube(this.scene);
         this.verticalFin = new MyVerticalFin(this.scene);
         this.tailConnector = new MySolidCylinder(this.scene, 20, 1);
+        
+        // New bucket and rope implementation
         this.bucket = new MyBucket(this.scene);
+        this.rope = new MyRope(this.scene);
 
         this.helicopterMaterial = new CGFappearance(this.scene);
         this.helicopterMaterial.setAmbient(0.4, 0.4, 0.4, 1.0);
@@ -124,6 +128,41 @@ export class MyHelicopter extends CGFobject {
 
     update(delta_t) {
         const dt = delta_t * 0.001;
+        
+        // Simplified bucket deployment logic based on helicopter state
+        switch (this.state) {
+            case HeliState.LANDED:
+                // When landed, bucket is fully retracted
+                this.bucketDeployment = this._updateValue(this.bucketDeployment, 0, 0.05);
+                break;
+                
+            case HeliState.ASCENDING:
+                // During ascent, deploy based on height progress
+                const ascentProgress = (this.position.y - this.initialPosition.y) / 
+                                      (this.config.cruiseAltitude - this.initialPosition.y);
+                
+                // Start deploying after 30% of ascent
+                if (ascentProgress < 0.3) {
+                    this.bucketDeployment = this._updateValue(this.bucketDeployment, 0, 0.05);
+                } else {
+                    // Map 30%-100% progress to 0-1 deployment
+                    const targetDeployment = Math.min(1, (ascentProgress - 0.3) / 0.7);
+                    this.bucketDeployment = this._updateValue(this.bucketDeployment, targetDeployment, 0.03);
+                }
+                break;
+                
+            case HeliState.CRUISING:
+                // When cruising, bucket is fully deployed
+                this.bucketDeployment = this._updateValue(this.bucketDeployment, 1, 0.05);
+                break;
+                
+            case HeliState.DESCENDING:
+            case HeliState.AUTO_RETURNING:
+                // When returning or descending, retract bucket
+                this.bucketDeployment = this._updateValue(this.bucketDeployment, 0, 0.03);
+                break;
+        }
+        
         switch (this.state) {
             case HeliState.ASCENDING:  this.updateAscent(dt); break;
             case HeliState.CRUISING:   this.updateCruising(dt); break;
@@ -133,6 +172,12 @@ export class MyHelicopter extends CGFobject {
         this.updateRotors(dt);
         this.updateTilt();
         this.updateSideTilt();
+    }
+
+    // Helper method for smooth value transitions
+    _updateValue(current, target, step) {
+        if (Math.abs(target - current) < step) return target;
+        return current + Math.sign(target - current) * step;
     }
 
     updateRotors(dt) {
@@ -190,6 +235,8 @@ export class MyHelicopter extends CGFobject {
             this.config.maxVerticalSpeed
         );
         this.position.y += this.verticalSpeed;
+        
+        // When reaching cruise altitude, fully deploy bucket
         if (this.position.y >= this.config.cruiseAltitude) {
             this.position.y = this.config.cruiseAltitude;
             this.verticalSpeed = 0;
@@ -516,7 +563,7 @@ export class MyHelicopter extends CGFobject {
         this.tiltAngle = 0;
         this.sideTiltAngle = 0;
         this.isBucketDeployed = false;
-        this.bucketY = 0.45;
+        this.bucketDeployment = 0;
     }
     
     getPosition() {
@@ -570,11 +617,29 @@ export class MyHelicopter extends CGFobject {
         }
         this.scene.popMatrix();
 
-        // Bucket
-        this.scene.pushMatrix();
-        this.scene.translate(0, this.bucketY, 0);
-        this.bucket.display();
-        this.scene.popMatrix();
+        // Only display bucket and rope if there's any deployment
+        if (this.bucketDeployment > 0) {
+            const maxRopeLength = 2.0; // Maximum rope length when fully deployed
+            const heliBottomY = -0.3;  // Point where rope connects to helicopter
+            
+            // Calculate positions based on deployment factor
+            const ropeLength = this.bucketDeployment * maxRopeLength;
+            const bucketY = heliBottomY - ropeLength - 0.24;
+            
+            // Display rope first (if long enough to be visible)
+            if (ropeLength > 0.05) {
+                this.scene.pushMatrix();
+                this.scene.translate(0, heliBottomY, 0);
+                this.rope.display(ropeLength);
+                this.scene.popMatrix();
+            }
+            
+            // Display bucket
+            this.scene.pushMatrix();
+            this.scene.translate(0, bucketY, 0);
+            this.bucket.display();
+            this.scene.popMatrix();
+        }
 
         // Skis
         this.displaySkis();

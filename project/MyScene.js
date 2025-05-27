@@ -7,7 +7,6 @@ import { MyForest } from "./MyForest.js";
 import { MyHelicopter } from "./MyHeli.js";
 import { MyFire } from "./MyFire.js";
 import { MyTriangle } from "./MyTriangle.js";
-import { MyBucket } from "./MyBucket_2.js";
 
 export class MyScene extends CGFscene {
   constructor() {
@@ -19,12 +18,12 @@ export class MyScene extends CGFscene {
     this.landingTriggered = false;
     
     // Camera settings
-    this.cameraMode = 'Default'; // Default to third-person mode
-    this.thirdPersonDistance = 10;   // Distance behind helicopter
-    this.thirdPersonHeight = 5;      // Height above helicopter
+    this.cameraMode = 'ThirdPerson'; // Default to third-person mode
+    this.thirdPersonDistance = 1;   // Distance behind helicopter
+    this.thirdPersonHeight = 2;      // Height above helicopter
     
     // Store default camera settings for initialization
-    this.defaultCameraPosition = vec3.fromValues(5, 5, 5);
+    this.defaultCameraPosition = vec3.fromValues(10, 10, 10);
     this.defaultCameraTarget = vec3.fromValues(0, 0, 0);
     
     // Add this flag to track camera mode changes
@@ -52,8 +51,7 @@ export class MyScene extends CGFscene {
     this.axis = new CGFaxis(this, 20, 1);
     this.ground = new MyGround(this);
     this.panorama = new MyPanorama(this, this.panoramaTexture);
-    this.bucket = new MyBucket(this);
-    
+
     // First create the building
     this.module = new MyBuilding(this, 15, 2, 2, 
       [this.windowTexture, this.windowTexture, this.windowTexture],
@@ -258,7 +256,5 @@ export class MyScene extends CGFscene {
     
     //this.module.display();
     this.helicopter.display();
-    // Display bucket only if it's initialized
-    if (this.bucket) this.bucket.display();
   }
 }
