@@ -15,7 +15,9 @@ const HeliState = {
     ASCENDING: 'ascending',
     CRUISING: 'cruising',
     DESCENDING: 'descending',
-    AUTO_RETURNING: 'auto_returning'
+    AUTO_RETURNING: 'auto_returning',
+    DESCENDING_TO_WATER: 'descending_to_water', // NEW: Descending to collect water
+    ASCENDING_FROM_WATER: 'ascending_from_water' // NEW: Ascending after collecting water
 };
 
 // New enum for auto-return phases
@@ -94,6 +96,10 @@ export class MyHelicopter extends CGFobject {
         // Store initial orientation for reset (typically 0)
         this.initialOrientation = 0;
     
+        // NEW: Water collection properties
+        this.hasWater = false; // Bucket is empty initially
+        this.waterCollectionHeight = 2; // Height above ground where water is collected
+        
         // Create helicopter components
         this.initializeComponents();
     }
@@ -163,11 +169,15 @@ export class MyHelicopter extends CGFobject {
                 break;
         }
         
+        // Update based on state
         switch (this.state) {
             case HeliState.ASCENDING:  this.updateAscent(dt); break;
             case HeliState.CRUISING:   this.updateCruising(dt); break;
             case HeliState.DESCENDING: this.updateDescent(dt); break;
             case HeliState.AUTO_RETURNING: this.updateAutoReturn(); break;
+            // NEW: Add water-related states
+            case HeliState.DESCENDING_TO_WATER: this.updateDescentToWater(dt); break;
+            case HeliState.ASCENDING_FROM_WATER: this.updateAscentFromWater(dt); break;
         }
         this.updateRotors(dt);
         this.updateTilt();
@@ -454,6 +464,63 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
+    // NEW: Update descent to water
+    updateDescentToWater(dt) {
+        const waterLevel = this.waterCollectionHeight;
+        
+        // INCREASED: Acceleration multiplier from 2.0 to 4.0 for much faster descent
+        const verticalAcceleration = this.config.verticalAcceleration * 4.0 * dt * 1000 * this.scene.speedFactor;
+        
+        // INCREASED: Maximum descent speed by 50%
+        this.verticalSpeed = Math.max(
+            this.verticalSpeed - verticalAcceleration,
+            -this.config.maxVerticalSpeed * 1.5
+        );
+        
+        // Update position
+        this.position.y += this.verticalSpeed;
+        
+        // Only start braking when very close to water (0.3 units instead of 0.5)
+        if (this.position.y <= waterLevel + 0.3) {
+            // ADJUSTED: Stronger braking force for quicker stop
+            const brakingForce = this.config.verticalAcceleration * 6.0 * dt * 1000;
+            this.verticalSpeed = Math.min(this.verticalSpeed + brakingForce, -0.01);
+        }
+        
+        // When bucket reaches water level
+        if (this.position.y <= waterLevel) {
+            this.position.y = waterLevel;
+            this.verticalSpeed = 0;
+            
+            // Fill bucket with water
+            if (!this.hasWater) {
+                console.log("Collecting water");
+                this.hasWater = true;
+            }
+        }
+    }
+
+    // NEW: Update ascent from water
+    updateAscentFromWater(dt) {
+        // INCREASED: Acceleration value doubled for faster takeoff
+        const verticalAcceleration = 0.004 * dt * 1000 * this.scene.speedFactor;
+        
+        // INCREASED: Maximum ascent speed by 50%
+        this.verticalSpeed = Math.min(
+            this.verticalSpeed + verticalAcceleration,
+            this.config.maxVerticalSpeed * 1.5
+        );
+        
+        this.position.y += this.verticalSpeed;
+        
+        // When reaching cruise altitude
+        if (this.position.y >= this.config.cruiseAltitude) {
+            this.position.y = this.config.cruiseAltitude;
+            this.verticalSpeed = 0;
+            this.state = HeliState.CRUISING;
+        }
+    }
+
     normalizeAngle(angle) {
         while (angle > Math.PI) angle -= 2 * Math.PI;
         while (angle < -Math.PI) angle += 2 * Math.PI;
@@ -493,7 +560,9 @@ export class MyHelicopter extends CGFobject {
     }
      
     turn(v) {
-        if (this.state !== HeliState.CRUISING && this.state !== HeliState.AUTO_RETURNING) return;
+        // Only allow turning during CRUISING state
+        if (this.state !== HeliState.CRUISING) return;
+        
         this.lastTurnValue = v;
         this.isTurning = true;
         const maxTurnRate = 0.2;
@@ -510,13 +579,10 @@ export class MyHelicopter extends CGFobject {
         this.updateVelocityDirection();
     }
 
-    setTurning(state) {
-        this.isTurning = state;
-        if (!state) this.lastTurnValue = 0;
-    }
-    
     accelerate(v) {
-        if (this.state !== HeliState.CRUISING && this.state !== HeliState.AUTO_RETURNING) return;
+        // Only allow acceleration during CRUISING state
+        if (this.state !== HeliState.CRUISING) return;
+        
         this.isAccelerating = true;
         const accelerationValue = v * 1.2 * this.scene.speedFactor;
         this.speed += accelerationValue;
@@ -524,7 +590,18 @@ export class MyHelicopter extends CGFobject {
         this.updateVelocityDirection();
     }
 
+    setTurning(state) {
+        // Only allow changing turning state during CRUISING
+        if (this.state !== HeliState.CRUISING) return;
+        
+        this.isTurning = state;
+        if (!state) this.lastTurnValue = 0;
+    }
+
     setForwardAccelerating(state) {
+        // Only allow changing acceleration state during CRUISING
+        if (this.state !== HeliState.CRUISING) return;
+        
         this.isAccelerating = state;
     }
     
@@ -534,13 +611,29 @@ export class MyHelicopter extends CGFobject {
     }
     
     startAscent() {
+        // If landed, take off normally
         if (this.state === HeliState.LANDED) {
             this.state = HeliState.ASCENDING;
+            this.verticalSpeed = 0.03;
+        } 
+        // If at water level with water collected, ascend to cruising altitude
+        else if (this.state === HeliState.DESCENDING_TO_WATER && this.hasWater) {
+            console.log("Ascending with water");
+            this.state = HeliState.ASCENDING_FROM_WATER;
             this.verticalSpeed = 0.03;
         }
     }
     
     startDescent() {
+        // If cruising over water and bucket is empty, descend to collect water
+        if (this.state === HeliState.CRUISING && this.isOverWater() && !this.hasWater) {
+            console.log("Descending to collect water");
+            this.state = HeliState.DESCENDING_TO_WATER;
+            this.verticalSpeed = 0;
+            return;
+        }
+        
+        // Otherwise, use the existing auto-return logic (return to helipad)
         if (this.state === HeliState.CRUISING) {
             // Use the stored initial position for auto-return
             this.targetPosition = { 
@@ -553,6 +646,15 @@ export class MyHelicopter extends CGFobject {
         }
     }
     
+    // Add new method to check if over water
+    isOverWater() {
+        // Use scene's ground object to check if current position is over water
+        if (this.scene && this.scene.ground) {
+            return this.scene.ground.isLake(this.position.x, this.position.z);
+        }
+        return false;
+    }
+
     resetPosition() {
         this.position = { ...this.initialPosition };
         this.orientation = 0;
@@ -564,6 +666,7 @@ export class MyHelicopter extends CGFobject {
         this.sideTiltAngle = 0;
         this.isBucketDeployed = false;
         this.bucketDeployment = 0;
+        this.hasWater = false; // Reset water state
     }
     
     getPosition() {
@@ -636,10 +739,10 @@ export class MyHelicopter extends CGFobject {
                 this.scene.popMatrix();
             }
             
-            // Display bucket
+            // Display bucket with water state
             this.scene.pushMatrix();
             this.scene.translate(0, bucketY, 0);
-            this.bucket.display();
+            this.bucket.display(this.hasWater); // Pass water state to bucket
             this.scene.popMatrix();
         }
 

@@ -167,13 +167,27 @@ export class MyScene extends CGFscene {
           this.helicopter.setTurning(false);
       }
       
-      // Special controls remain the same
+      // Special controls with enhanced water logic
       if (this.gui.isKeyPressed("KeyR"))
           this.helicopter.resetPosition();
-      if (this.gui.isKeyPressed("KeyP") && this.helicopter.isLanded)
-          this.helicopter.startAscent();
-      if (this.gui.isKeyPressed("KeyL") && !this.helicopter.isLanded)
+      
+      // Handle P key (ascent)
+      if (this.gui.isKeyPressed("KeyP")) {
+          // Case 1: On helipad - take off
+          if (this.helicopter.isLanded) {
+              this.helicopter.startAscent();
+          } 
+          // Case 2: At water level with filled bucket - ascend
+          else if (this.helicopter.state === 'descending_to_water' && this.helicopter.hasWater) {
+              this.helicopter.startAscent();
+          }
+      }
+    
+      // Handle L key (descent)
+      if (this.gui.isKeyPressed("KeyL") && !this.helicopter.isLanded) {
+          // Try to descend - the helicopter will decide if it should go to water or helipad
           this.helicopter.startDescent();
+      }
     }
     
     // Update camera toggle on 'C' key press
