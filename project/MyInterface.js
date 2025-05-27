@@ -23,6 +23,7 @@ export class MyInterface extends CGFinterface {
         
         // Camera controls folder
         const cameraFolder = this.gui.addFolder('Camera');
+        cameraFolder.add(this.scene, 'cameraMode', ['Default', 'ThirdPerson']).name('Camera Mode');
         cameraFolder.add(this.scene, 'thirdPersonDistance', 5, 20).name('Follow Distance');
         cameraFolder.add(this.scene, 'thirdPersonHeight', 2, 15).name('Camera Height');
         cameraFolder.open();

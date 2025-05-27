@@ -7,23 +7,28 @@ import { MyForest } from "./MyForest.js";
 import { MyHelicopter } from "./MyHeli.js";
 import { MyFire } from "./MyFire.js";
 import { MyTriangle } from "./MyTriangle.js";
+import { MyBucket } from "./MyBucket_2.js";
 
 export class MyScene extends CGFscene {
   constructor() {
     super();
     this.speedFactor = 1;
     this.lastTime = 0;
-    this.elapsedTime = 0; // Track elapsed time
-    this.takeoffTriggered = false; // Flag to track if takeoff was triggered
-    this.landingTriggered = false; // Flag to track if landing was triggered
+    this.elapsedTime = 0;
+    this.takeoffTriggered = false;
+    this.landingTriggered = false;
     
-    // Camera settings - always in third-person mode
+    // Camera settings
+    this.cameraMode = 'Default'; // Default to third-person mode
     this.thirdPersonDistance = 10;   // Distance behind helicopter
     this.thirdPersonHeight = 5;      // Height above helicopter
     
     // Store default camera settings for initialization
-    this.defaultCameraPosition = vec3.fromValues(100, 100, 100);
+    this.defaultCameraPosition = vec3.fromValues(5, 5, 5);
     this.defaultCameraTarget = vec3.fromValues(0, 0, 0);
+    
+    // Add this flag to track camera mode changes
+    this.needsCameraReset = true;
   }
 
   init(application) {
@@ -47,6 +52,7 @@ export class MyScene extends CGFscene {
     this.axis = new CGFaxis(this, 20, 1);
     this.ground = new MyGround(this);
     this.panorama = new MyPanorama(this, this.panoramaTexture);
+    this.bucket = new MyBucket(this);
     
     // First create the building
     this.module = new MyBuilding(this, 15, 2, 2, 
@@ -64,7 +70,7 @@ export class MyScene extends CGFscene {
     // Display flags
     this.displayAxis = false;
     this.displayPanorama = true;
-    this.displayPlane = true;
+    this.displayPlane = false;
     this.displayForest = true;
     this.displayBuilding = true;
   }
@@ -94,7 +100,8 @@ export class MyScene extends CGFscene {
 
   // Update third-person camera position to follow helicopter
   updateThirdPersonCamera() {
-    if (!this.helicopter) return;
+    // Only update if in third-person mode
+    if (this.cameraMode !== 'ThirdPerson' || !this.helicopter) return;
     
     // Get helicopter position and orientation
     const heliPos = this.helicopter.getPosition();
@@ -116,6 +123,16 @@ export class MyScene extends CGFscene {
       heliPos.y + 1,   // Target Y (slightly above helicopter)
       heliPos.x        // Target Z (scene X)
     );
+  }
+
+  // Completely replace your updateCameraMode method
+  updateCameraMode() {
+    if (this.cameraMode === 'Default' && this.needsCameraReset) {
+      // Reset camera ONLY when switching modes
+      this.camera.position = vec3.clone(this.defaultCameraPosition);
+      this.camera.target = vec3.clone(this.defaultCameraTarget);
+      this.needsCameraReset = false;
+    }
   }
 
   checkKeys(delta_t) {
@@ -160,6 +177,25 @@ export class MyScene extends CGFscene {
       if (this.gui.isKeyPressed("KeyL") && !this.helicopter.isLanded)
           this.helicopter.startDescent();
     }
+    
+    // Update camera toggle on 'C' key press
+    if (this.gui.isKeyPressed("KeyC") && !this.keyPressed) {
+      // Toggle between camera modes
+      const previousMode = this.cameraMode;
+      this.cameraMode = (this.cameraMode === 'Default') ? 'ThirdPerson' : 'Default';
+      
+      // Set flag to reset camera if mode changed
+      if (previousMode !== this.cameraMode) {
+        this.needsCameraReset = true;
+      }
+      
+      this.keyPressed = true;
+    }
+    
+    // Track key state to prevent multiple toggles per press
+    if (!this.gui.isKeyPressed("KeyC")) {
+      this.keyPressed = false;
+    }
   }
 
   update(t) {
@@ -186,8 +222,12 @@ export class MyScene extends CGFscene {
     if (this.fire) this.fire.update(delta_t);
     if (this.helicopter) this.helicopter.update(delta_t);
     
-    // Always update camera to follow helicopter
-    this.updateThirdPersonCamera();
+    // Check camera mode before updating
+    if (this.cameraMode === 'ThirdPerson') {
+      this.updateThirdPersonCamera();
+    } else {
+      this.updateCameraMode();
+    }
     
     // Process keyboard input
     this.checkKeys(delta_t);
@@ -215,10 +255,10 @@ export class MyScene extends CGFscene {
     if (this.displayPlane) this.ground.display();
     if (this.displayAxis) this.axis.display();
     if (this.displayForest) {} 
+    
     //this.module.display();
-    //this.forest.display();
-    //this.fire.display();
     this.helicopter.display();
-    this.module.display();
+    // Display bucket only if it's initialized
+    if (this.bucket) this.bucket.display();
   }
 }
