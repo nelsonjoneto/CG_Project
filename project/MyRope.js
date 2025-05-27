@@ -34,7 +34,7 @@ export class MyRope extends CGFobject {
         
         // Constants for rope geometry
         const branchOffset = 0.5;       // Fixed distance from main rope end to bucket top
-        const bucketRimRadius = 0.156;  // Radius of bucket rim (0.3 * 0.52)
+        const bucketRimRadius = 0.26;   // UPDATED: Radius of bucket rim (0.5 * 0.52)
         
         // Calculate actual vertical rope length and end position
         const verticalRopeLength = Math.max(0, mainLength - branchOffset);

@@ -19,8 +19,8 @@ export class MyScene extends CGFscene {
     
     // Camera settings
     this.cameraMode = 'ThirdPerson'; // Default to third-person mode
-    this.thirdPersonDistance = 1;   // Distance behind helicopter
-    this.thirdPersonHeight = 2;      // Height above helicopter
+    this.thirdPersonDistance = 10;   // Distance behind helicopter
+    this.thirdPersonHeight = 5;      // Height above helicopter
     
     // Store default camera settings for initialization
     this.defaultCameraPosition = vec3.fromValues(10, 10, 10);
@@ -68,7 +68,7 @@ export class MyScene extends CGFscene {
     // Display flags
     this.displayAxis = false;
     this.displayPanorama = true;
-    this.displayPlane = false;
+    this.displayPlane = true;
     this.displayForest = true;
     this.displayBuilding = true;
   }
@@ -254,7 +254,7 @@ export class MyScene extends CGFscene {
     if (this.displayAxis) this.axis.display();
     if (this.displayForest) {} 
     
-    //this.module.display();
+    this.module.display();
     this.helicopter.display();
   }
 }

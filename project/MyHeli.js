@@ -624,7 +624,9 @@ export class MyHelicopter extends CGFobject {
             
             // Calculate positions based on deployment factor
             const ropeLength = this.bucketDeployment * maxRopeLength;
-            const bucketY = heliBottomY - ropeLength - 0.24;
+            
+            // UPDATED: Account for increased bucket size (half height is now 0.2 instead of 0.12)
+            const bucketY = heliBottomY - ropeLength - 0.4; // Changed from -0.24 to -0.4
             
             // Display rope first (if long enough to be visible)
             if (ropeLength > 0.05) {

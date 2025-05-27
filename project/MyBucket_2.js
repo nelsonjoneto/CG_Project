@@ -19,7 +19,7 @@ export class MyBucket extends CGFobject {
         this.metalMaterial.setShininess(120);
         
         // Store constants for easier reference
-        this.scale = 0.3;
+        this.scale = 0.5;  // UPDATED: Increased scale from 0.3 to 0.5
         this.height = 0.8;
         this.rimScale = 0.52;
     }
@@ -58,12 +58,12 @@ export class MyBucket extends CGFobject {
         this.scene.popMatrix();
     }
     
-    // Public methods for accessing bucket dimensions
+    // Public methods for accessing bucket dimensions - automatically updated with new scale
     getRimRadius() {
-        return this.scale * this.rimScale;
+        return this.scale * this.rimScale; // Now returns 0.26 instead of 0.156
     }
     
     getHeight() {
-        return this.scale * this.height;
+        return this.scale * this.height; // Now returns 0.4 instead of 0.24
     }
 }
