@@ -125,7 +125,14 @@ export class MyHelicopter extends CGFobject {
         this.helicopterMaterial.setDiffuse(0.6, 0.6, 0.6, 1.0);
         this.helicopterMaterial.setSpecular(1.0, 1.0, 1.0, 1.0);
         this.helicopterMaterial.setShininess(70.0);
-        this.helicopterMaterial.loadTexture("textures/helicopter.png");
+        this.helicopterMaterial.loadTexture("textures/heli_with_doors.png");
+
+        this.glassMaterial = new CGFappearance(this.scene);
+        this.glassMaterial.setAmbient(0.1, 0.1, 0.1, 1.0);
+        this.glassMaterial.setDiffuse(0.22, 0.22, 0.22, 1.0);
+        this.glassMaterial.setSpecular(0.8, 0.8, 0.8, 1.0);
+        this.glassMaterial.setShininess(100.0);
+        this.glassMaterial.loadTexture("textures/cockpit_glass.jpg");
     }
 
     get isLanded() {
@@ -690,6 +697,14 @@ export class MyHelicopter extends CGFobject {
         // Body
         this.scene.pushMatrix();
         this.scene.scale(1, 0.5, 0.5);
+        this.body.display();
+        this.scene.popMatrix();
+
+        // Cabine (vidro frontal)
+        this.scene.pushMatrix();
+        this.scene.translate(0.5, 0.11, 0); // um pouco à frente
+        this.scene.scale(0.45, 0.35, 0.4); // forma menor e achatada
+        this.glassMaterial.apply();
         this.body.display();
         this.scene.popMatrix();
 
