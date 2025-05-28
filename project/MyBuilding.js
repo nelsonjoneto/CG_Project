@@ -9,6 +9,10 @@ export class MyBuilding extends CGFobject {
         this.scene = scene;
         this.textures = textures;
         
+        // Initialize tracking variables
+        this.isInLandingSequence = false;
+        this.lastHelicopterState = null;
+        
         // Calculate module dimensions
         this.mainWidth = width;
         this.lateralWidth = width * 0.75;
@@ -92,18 +96,35 @@ export class MyBuilding extends CGFobject {
         // Update heliport state if it changed
         if (heliportState !== null &&
             (helicopterState !== this.lastHelicopterState || heliportState === 'neutral')) {
-            this.mainModule.setHeliportState(heliportState, t);
+            this.modules[1].setHeliportState(heliportState, t);
         }
 
         this.lastHelicopterState = helicopterState;
-        this.mainModule.update(t);
+        this.modules[1].update(t);
     }
-
+    
     getHelipadPosition() {
-        return this.mainModule.getHelipadPosition();
+        return this.modules[1].getHelipadPosition();
     }
 
     display() {
-        this.mainModule.display();
+        this.scene.pushMatrix();
+        
+        // Left module
+        this.scene.pushMatrix();
+        this.scene.translate(-this.moduleSpacing, 0, 0);
+        this.modules[0].display();
+        this.scene.popMatrix();
+        
+        // Main center module
+        this.modules[1].display();
+        
+        // Right module
+        this.scene.pushMatrix();
+        this.scene.translate(this.moduleSpacing, 0, 0);
+        this.modules[2].display();
+        this.scene.popMatrix();
+        
+        this.scene.popMatrix();
     }
 }

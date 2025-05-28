@@ -3,7 +3,7 @@ import { MyUnitCube } from './MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
 import { MyHelipadLight } from './MyHelipadLight.js';
 
-// Heliport animation states
+// Heliport animation
 const HeliportState = {
     NEUTRAL: 'neutral',
     TAKEOFF: 'takeoff',
@@ -131,12 +131,12 @@ export class MyMainModule extends CGFobject {
     updateHelipadTexture() {
         if (this.isShowingAlternate) {
             if (this.heliportState === HeliportState.TAKEOFF) {
-                this.helipad.windowMaterial.setTexture(this.upTexture);
+                this.helipad.material.setTexture(this.upTexture);
             } else if (this.heliportState === HeliportState.LANDING) {
-                this.helipad.windowMaterial.setTexture(this.downTexture);
+                this.helipad.material.setTexture(this.downTexture);
             }
         } else {
-            this.helipad.windowMaterial.setTexture(this.heliportTexture);
+            this.helipad.material.setTexture(this.heliportTexture);
         }
     }
     
@@ -150,11 +150,11 @@ export class MyMainModule extends CGFobject {
         if (state === 'takeoff' || state === 'landing') {
             this.isShowingAlternate = true;
 
-            // Apply the appropriate texture immediately
+            // Apply the appropriate texture immediately - fixed property name
             if (state === 'takeoff') {
-                this.helipad.windowMaterial.setTexture(this.upTexture);
+                this.helipad.material.setTexture(this.upTexture);
             } else {
-                this.helipad.windowMaterial.setTexture(this.downTexture);
+                this.helipad.material.setTexture(this.downTexture);
             }
 
             // Activate corner lights immediately
@@ -162,7 +162,7 @@ export class MyMainModule extends CGFobject {
         } else {
             // For neutral state, use normal H texture and turn off lights
             this.isShowingAlternate = false;
-            this.helipad.windowMaterial.setTexture(this.heliportTexture);
+            this.helipad.material.setTexture(this.heliportTexture);
             this.cornerLights.forEach(light => light.setActive(false));
         }
     }
