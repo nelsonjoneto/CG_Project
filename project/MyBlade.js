@@ -1,6 +1,5 @@
 import { CGFobject } from '../lib/CGF.js';
 import { CGFappearance } from '../lib/CGF.js';
-import { CGFtexture } from '../lib/CGF.js';
 export class MyBlade extends CGFobject {
     constructor(scene) {
         super(scene);

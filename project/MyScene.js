@@ -49,20 +49,23 @@ export class MyScene extends CGFscene {
 
     // Initialize scene objects
     this.axis = new CGFaxis(this, 20, 1);
-    this.ground = new MyGround(this);
-    this.panorama = new MyPanorama(this, this.panoramaTexture);
+    this.ground = new MyGround(this, {
+        grass: this.textures.grass,
+        water: this.textures.water,
+        mask: this.textures.mask
+      });
+    this.panorama = new MyPanorama(this, this.textures.panorama);
 
     // First create the building
     this.module = new MyBuilding(this, 15, 2, 2, 
-      [this.windowTexture, this.windowTexture, this.windowTexture],
-      [0.8, 0.8, 0.8, 1.0]);
-      
+      [this.textures.window, this.textures.window, this.textures.window],
+      [0.7, 0.7, 0.7, 1.0], {door: this.textures.door, helipad: this.textures.helipad, up: this.textures.up, down: this.textures.down});
+
     // Then create the helicopter with the building's helipad position
     const helipadPos = this.module.getHelipadPosition();
-    this.helicopter = new MyHelicopter(this, helipadPos);  
-    this.forest = new MyForest(this, 10, 10, 60, 60);
-    this.fire = new MyFire(this, 3, 3, 60, 60);
-
+    this.helicopter = new MyHelicopter(this, helipadPos, {heliBody: this.textures.heliBody, heliGlass: this.textures.heliGlass, water: this.textures.water });  
+    
+    
     this.triangle = new MyTriangle(this, 20, 20);
 
     // Display flags
@@ -74,13 +77,44 @@ export class MyScene extends CGFscene {
   }
 
   initTextures() {
-    this.panoramaTexture = new CGFtexture(this, "textures/panorama.jpg");
-    this.windowTexture = new CGFtexture(this, "textures/window.jpg");
-  }
+  this.textures = {
+    // Panorama & genéricos - DONE
+    panorama: new CGFtexture(this, "textures/panorama.jpg"),
+    window: new CGFtexture(this, "textures/window.jpg"),
+
+    // Helicóptero - DONE
+    heliBody: new CGFtexture(this, "textures/heli_with_doors.png"),
+    heliGlass: new CGFtexture(this, "textures/cockpit_glass.jpg"),
+
+    // Fogo - DONE
+    flame: new CGFtexture(this, "textures/flame_texture.webp"),
+
+    // Ground - DONE
+    grass: new CGFtexture(this, "textures/grass_tex.png"),
+    water: new CGFtexture(this, "textures/waterTex.jpg"),
+    mask: new CGFtexture(this, "textures/mask.png"),
+
+    // Edifício / Heliporto - DONE
+    door: new CGFtexture(this, "textures/door.png"),
+    helipad: new CGFtexture(this, "textures/H.png"),
+    up: new CGFtexture(this, "textures/UP.png"),
+    down: new CGFtexture(this, "textures/DOWN.png"),
+
+    // Árvores - DONE
+    trunk: new CGFtexture(this, "textures/trunk.jpg"),
+    trunkAlt: new CGFtexture(this, "textures/trunk3.jpg"),
+    leaves: new CGFtexture(this, "textures/leaves.png"),
+    pine: new CGFtexture(this, "textures/pinetree.png"),
+
+    // ShaderScene
+    waterMap: new CGFtexture(this, "textures/waterMap.jpg")
+  };
+}
+
 
   initLights() {
     // Luz 0
-    this.lights[0].setPosition(100, 200, 100, 1);
+    this.lights[0].setPosition(200, 300, 200, 1);    // Sol (principal)
     this.lights[0].setAmbient(0.1, 0.1, 0.1, 1.0);   // Ambiente
     this.lights[0].setDiffuse(0.4, 0.4, 0.4, 1.0);   // Difusa (reduzida)
     this.lights[0].setSpecular(0.1, 0.1, 0.1, 1.0);  // Especular (reduzida)
@@ -88,7 +122,7 @@ export class MyScene extends CGFscene {
     this.lights[0].update();
 
     // Luz 1
-    this.lights[1].setPosition(200, 200, 200, 1);
+    this.lights[1].setPosition(-200, 100, -200, 1);
     this.lights[1].setAmbient(0.1, 0.1, 0.1, 1.0);
     this.lights[1].setDiffuse(0.4, 0.4, 0.4, 1.0);
     this.lights[1].setSpecular(0.1, 0.1, 0.1, 1.0);
@@ -96,13 +130,28 @@ export class MyScene extends CGFscene {
     this.lights[1].update();
 
     // Luz 2
-    this.lights[2].setPosition(320, 200, 1000, 1);
+    this.lights[2].setPosition(0, 250, -200, 1);
     this.lights[2].setAmbient(0.1, 0.1, 0.1, 1.0);
     this.lights[2].setDiffuse(0.4, 0.4, 0.4, 1.0);
     this.lights[2].setSpecular(0.1, 0.1, 0.1, 1.0);
     this.lights[2].enable();
     this.lights[2].update();
   }
+  isBuildingArea(x, z) {
+    // O edifício está centrado em (0, 0)
+    const totalWidth = 15 + 2 * (15 * 0.75); // main + 2 laterais = 15 + 11.25 * 2 = 37.5
+    const totalDepth = 15 * 0.75;            // Usado como profundidade base
+
+    const margin = 15; // margem extra para garantir espaço livre
+
+    const halfWidth = totalWidth / 2 + margin;
+    const halfDepth = totalDepth / 2 + margin;
+
+    return (
+        x >= -halfWidth && x <= halfWidth &&
+        z >= -halfDepth && z <= halfDepth
+    );
+}
 
   initCameras() {
     // Initialize with default camera
@@ -265,6 +314,19 @@ export class MyScene extends CGFscene {
     
     // Update elapsed time
     this.elapsedTime += delta_t;
+
+    if (!this.forest && this.ground.maskReady) {
+    this.forest = new MyForest(this, 23, 23, 200, 200,
+        this.textures.trunk,
+        this.textures.trunkAlt,
+        this.textures.leaves,
+        this.textures.pine,
+        this.ground);
+
+    const treePositions = this.forest.trees.map(entry => ({ x: entry.x, z: entry.z }));
+    this.fire = new MyFire(this, treePositions, 100, this.textures.flame); // 10 focos de fogo, por exemplo
+
+  }
   }
 
   setDefaultAppearance() {
@@ -282,11 +344,13 @@ export class MyScene extends CGFscene {
     this.loadIdentity();
     this.applyViewMatrix();
 
+    //this.setGlobalAmbientLight(0.5,0.5,0.5,1);
+
     if (this.displayPanorama) this.panorama.display();
     if (this.displayPlane) this.ground.display();
     if (this.displayAxis) this.axis.display();
-    //if (this.displayForest) {this.forest.display();} 
-    //this.fire.display();
+    if (this.displayForest && this.forest) { this.forest.display(); }
+    if (this.fire) this.fire.display();
     this.module.display();
     this.helicopter.display();
   }

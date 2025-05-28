@@ -1,241 +1,164 @@
-import { CGFobject, CGFshader, CGFappearance, CGFtexture } from '../lib/CGF.js';
+import { CGFobject, CGFshader, CGFappearance } from '../lib/CGF.js';
 import { MyTriangle } from './MyTriangle.js';
 
 export class MyFire extends CGFobject {
-    constructor(scene, rows = 3, cols = 3, areaWidth = 15, areaDepth = 15) {
+    constructor(scene, treePositions, numFires = 10, flameTexture) {
         super(scene);
         this.scene = scene;
         this.triangles = [];
-        
-        // Store dimensions as properties
-        this.rows = rows;
-        this.cols = cols;
-        this.areaWidth = areaWidth;
-        this.areaDepth = areaDepth;
-        
-        // Store cell information for efficiency
-        this.cells = [];
         this.extinguishingCells = {};
+        this.cells = [];
 
-        // Create and configure flame material
+        // Setup material
         this.flameMaterial = new CGFappearance(this.scene);
-        this.flameMaterial.setEmission(1.0, 0.6, 0.0, 1.0); // Flame-like glow
-        this.flameMaterial.setTexture(new CGFtexture(this.scene, "textures/flame_texture.webp"));
+        this.flameMaterial.setEmission(1.0, 0.6, 0.0, 1.0);
+        this.flameMaterial.setTexture(flameTexture);
 
-        // Create shader
+        // Shader
         this.flameShader = new CGFshader(
-            this.scene.gl, 
-            "shaders/flame.vert", 
+            this.scene.gl,
+            "shaders/flame.vert",
             "shaders/flame.frag"
         );
-        
-        // Initialize shader uniforms
         this.flameShader.setUniformsValues({
             timeFactor: 0
         });
 
-        this.initTriangles();
+        this.initTrianglesFromTrees(treePositions, numFires);
     }
 
-    initTriangles() {
-        const cellWidth = this.areaWidth / this.cols;
-        const cellDepth = this.areaDepth / this.rows;
+    initTrianglesFromTrees(treePositions, numFires) {
+        const selected = new Set();
 
-        for (let i = 0; i < this.rows; i++) {
-            for (let j = 0; j < this.cols; j++) {
-                const baseX = -this.areaWidth / 2 + (j + 0.5) * cellWidth;
-                const baseZ = -this.areaDepth / 2 + (i + 0.5) * cellDepth;
-                
-                // Store cell boundary information
-                const cell = {
-                    row: i,
-                    col: j,
-                    minX: baseX - cellWidth / 2,
-                    maxX: baseX + cellWidth / 2,
-                    minZ: baseZ - cellDepth / 2,
-                    maxZ: baseZ + cellDepth / 2,
-                    baseX: baseX,
-                    baseZ: baseZ,
-                    extinguished: false,
-                    extinguishProgress: 0,
-                    triangles: [],
-                    cellId: `${i}_${j}`
+        while (this.cells.length < numFires && selected.size < treePositions.length) {
+            const idx = Math.floor(Math.random() * treePositions.length);
+            if (selected.has(idx)) continue;
+            selected.add(idx);
+
+            const baseX = treePositions[idx].x;
+            const baseZ = treePositions[idx].z;
+            const cellId = `tree_${idx}`;
+
+            const cell = {
+                cellId,
+                baseX,
+                baseZ,
+                extinguished: false,
+                extinguishProgress: 0,
+                triangles: []
+            };
+            this.cells.push(cell);
+
+            const numFlames = 4 + Math.floor(Math.random() * 3); // 4-6
+            for (let k = 0; k < numFlames; k++) {
+                const width = 6 + Math.random() * 3.75;
+                const height = 11.25 + Math.random() * 7.5;
+                const rotationY = (Math.random() - 0.5) * Math.PI / 3;
+
+                const triangle = new MyTriangle(this.scene, width, height);
+                const flame = {
+                    triangle,
+                    position: {
+                        x: baseX + (Math.random() - 0.5) * 1.5,
+                        z: baseZ + (Math.random() - 0.5) * 1.5
+                    },
+                    rotationY,
+                    flameOffset: Math.random() * Math.PI * 2,
+                    xFrequency: 0.7 + Math.random() * 0.6,
+                    yFrequency: 0.5 + Math.random() * 0.4,
+                    zFrequency: 0.6 + Math.random() * 0.5,
+                    moveScale: 0.8 + Math.random() * 0.4,
+                    cellId
                 };
-                
-                this.cells.push(cell);
-                
-                const numFlames = 5 + Math.floor(Math.random() * 2); // 5-6 flames
-
-                for (let k = 0; k < numFlames; k++) {
-                    const width = 6 + Math.random() * 3.75;
-                    const height = 11.25 + Math.random() * 7.5;
-                    const rotationY = (Math.random() - 0.5) * Math.PI / 3;
-                    
-                    // Create unique movement pattern for each flame
-                    const flameOffset = Math.random() * Math.PI * 2; // Phase offset
-                    const xFrequency = 0.7 + Math.random() * 0.6; // Range: 0.7-1.3
-                    const yFrequency = 0.5 + Math.random() * 0.4; // Range: 0.5-0.9
-                    const zFrequency = 0.6 + Math.random() * 0.5; // Range: 0.6-1.1
-                    const moveScale = 0.8 + Math.random() * 0.4; // Range: 0.8-1.2
-
-                    const triangle = new MyTriangle(this.scene, width, height);
-
-                    const flameObj = {
-                        triangle: triangle,
-                        position: {
-                            x: baseX + (Math.random() - 0.5) * cellWidth * 0.5,
-                            z: baseZ + (Math.random() - 0.5) * cellDepth * 0.5
-                        },
-                        rotationY: rotationY,
-                        flameOffset: flameOffset,
-                        xFrequency: xFrequency,
-                        yFrequency: yFrequency,
-                        zFrequency: zFrequency,
-                        moveScale: moveScale,
-                        cellId: cell.cellId
-                    };
-                    
-                    // Add to both global triangle list and cell's triangle list
-                    this.triangles.push(flameObj);
-                    cell.triangles.push(flameObj);
-                }
+                this.triangles.push(flame);
+                cell.triangles.push(flame);
             }
         }
     }
-    
-    /**
-     * Checks if a point is inside any fire cell and extinguishes it
-     * @param {Number} x - x coordinate to check
-     * @param {Number} z - z coordinate to check
-     * @returns {Boolean} - true if coordinates were inside a fire cell
-     */
+
     extinguishAtLocation(x, z) {
-        // Check each cell
         for (const cell of this.cells) {
-            // Skip already extinguishing or extinguished cells
-            if (cell.extinguished || this.extinguishingCells[cell.cellId]) {
-                continue;
-            }
-            
-            // Check if point is inside this cell
-            if (x >= cell.minX && x <= cell.maxX && z >= cell.minZ && z <= cell.maxZ) {
-                console.log(`Extinguishing fire at cell ${cell.row},${cell.col}`);
-                
-                // Mark this cell as being extinguished
+            if (cell.extinguished || this.extinguishingCells[cell.cellId]) continue;
+
+            const dx = x - cell.baseX;
+            const dz = z - cell.baseZ;
+            const distSq = dx * dx + dz * dz;
+
+            if (distSq <= 5 * 5) { // within radius 5
+                console.log(`Extinguishing fire at ${cell.cellId}`);
                 this.extinguishingCells[cell.cellId] = {
                     startTime: Date.now(),
-                    cell: cell
+                    cell
                 };
-                
                 return true;
             }
         }
-        
         return false;
     }
-    
-    // Update method for animation
+
     update(t) {
-        // Store accumulated time as a class property
         if (!this.accumulatedTime) this.accumulatedTime = 0;
-        this.accumulatedTime += t / 800; // Convert milliseconds to seconds
-        
-        this.flameShader.setUniformsValues({
-            timeFactor: this.accumulatedTime
-        });
-        
-        // Handle extinguishing animations
+        this.accumulatedTime += t / 800;
+        this.flameShader.setUniformsValues({ timeFactor: this.accumulatedTime });
+
         const now = Date.now();
-        const extinguishedCellIds = [];
-        
+        const toRemove = [];
+
         for (const cellId in this.extinguishingCells) {
-            const extInfo = this.extinguishingCells[cellId];
-            const cell = extInfo.cell;
-            
-            // Calculate progress (0 to 1 over 2 seconds)
-            const elapsed = (now - extInfo.startTime) / 2000; // 2 seconds
-            cell.extinguishProgress = Math.min(1.0, elapsed);
-            
-            // Check if fully extinguished
-            if (cell.extinguishProgress >= 1.0) {
-                cell.extinguished = true;
-                extinguishedCellIds.push(cellId);
+            const info = this.extinguishingCells[cellId];
+            const elapsed = (now - info.startTime) / 2000;
+            info.cell.extinguishProgress = Math.min(1.0, elapsed);
+
+            if (info.cell.extinguishProgress >= 1.0) {
+                info.cell.extinguished = true;
+                toRemove.push(cellId);
             }
         }
-        
-        // Remove fully extinguished cells from active list
-        for (const cellId of extinguishedCellIds) {
+
+        for (const cellId of toRemove) {
             delete this.extinguishingCells[cellId];
         }
     }
 
     display() {
         this.scene.pushMatrix();
-        
-        // Save current shader
         const currentShader = this.scene.activeShader;
-
-        // Activate flame shader
         this.scene.setActiveShader(this.flameShader);
 
         for (const flame of this.triangles) {
-            // Skip flames in fully extinguished cells
             const cell = this.cells.find(c => c.cellId === flame.cellId);
-            if (cell && cell.extinguished) {
-                continue;
-            }
-            
+            if (cell && cell.extinguished) continue;
+
             this.scene.pushMatrix();
-            
-            // Position the flame
             this.scene.translate(flame.position.x, 0, flame.position.z);
             this.scene.rotate(flame.rotationY, 0, 1, 0);
-            
-            // Check if this flame is in an extinguishing cell
-            let extinguishFactor = 1.0;
-            let isExtinguishing = false;
-            
+
+            let scale = 1.0;
             if (this.extinguishingCells[flame.cellId]) {
-                isExtinguishing = true;
-                extinguishFactor = 1.0 - cell.extinguishProgress;
-            }
-            
-            // Apply scale if extinguishing
-            if (isExtinguishing) {
-                this.scene.scale(extinguishFactor, extinguishFactor, extinguishFactor);
-                
-                // Adjust the emission color to fade out
-                const fadingMaterial = new CGFappearance(this.scene);
-                fadingMaterial.setEmission(
-                    1.0 * extinguishFactor, 
-                    0.6 * extinguishFactor, 
-                    0.0 * extinguishFactor, 
-                    1.0
-                );
-                fadingMaterial.setTexture(this.flameMaterial.texture);
-                fadingMaterial.apply();
+                scale = 1.0 - cell.extinguishProgress;
+                this.scene.scale(scale, scale, scale);
+
+                const fading = new CGFappearance(this.scene);
+                fading.setEmission(1.0 * scale, 0.6 * scale, 0.0 * scale, 1.0);
+                fading.setTexture(this.flameMaterial.texture);
+                fading.apply();
             } else {
                 this.flameMaterial.apply();
             }
-            
-            // Set unique parameters for this flame
+
             this.flameShader.setUniformsValues({
                 flameOffset: flame.flameOffset,
                 xFrequency: flame.xFrequency,
-                yFrequency: flame.yFrequency, 
+                yFrequency: flame.yFrequency,
                 zFrequency: flame.zFrequency,
                 moveScale: flame.moveScale
             });
-            
-            // Display the flame
+
             flame.triangle.display();
-            
             this.scene.popMatrix();
         }
-        
-        // Restore original shader
+
         this.scene.setActiveShader(currentShader);
-        
         this.scene.popMatrix();
     }
 }

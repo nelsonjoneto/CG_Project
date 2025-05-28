@@ -4,9 +4,10 @@ import { MyModule } from './MyModule.js';
 import { MyMainModule } from './MyMainModule.js';
 
 export class MyBuilding extends CGFobject {
-    constructor(scene, width, numFloors, windowsPerFloor, windowTextures, color) {
+    constructor(scene, width, numFloors, windowsPerFloor, windowTextures, color, textures = {}) {
         super(scene);
         this.scene = scene;
+        this.textures = textures;
         
         // Calculate module dimensions
         this.mainWidth = width;
@@ -26,7 +27,7 @@ export class MyBuilding extends CGFobject {
                 windowsPerFloor,
                 windowSize,
                 color,
-                windowTextures[0], // Left texture
+                windowTextures[0],
                 1
             ),
             
@@ -38,7 +39,13 @@ export class MyBuilding extends CGFobject {
                 windowsPerFloor,
                 windowSize,
                 color,
-                windowTextures[1] // Middle texture
+                {
+                    window: windowTextures[1],
+                    door: scene.textures.door,
+                    helipad: scene.textures.helipad,
+                    up: scene.textures.up,
+                    down: scene.textures.down
+                }
             ),
             
             // Right module
@@ -50,7 +57,7 @@ export class MyBuilding extends CGFobject {
                 windowSize,
                 color,
                 windowTextures[2], // Right texture
-                0
+                1
             )
         ];
     }

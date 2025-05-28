@@ -18,7 +18,7 @@ export class MyModule extends CGFobject {
         this.cube = new MyUnitCube(scene, buldingNumber);
         
         // Windows
-        this.window = new MyWindow(scene, windowTexture, windowSize, windowSize);
+        this.window = new MyWindow(scene, windowTexture, windowSize, windowSize, false);
         this.initWindowPositions(windowsPerFloor, windowSize);
 
         // Material

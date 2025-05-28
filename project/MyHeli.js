@@ -29,9 +29,11 @@ const AutoReturnPhase = {
 };
 
 export class MyHelicopter extends CGFobject {
-    constructor(scene, initialPosition = null) {
+    constructor(scene, initialPosition = null, textures = {}) {
         super(scene);
         this.scene = scene;
+        this.textures = textures;
+
 
         // Use the provided initial position or default values
         if (initialPosition) {
@@ -46,6 +48,8 @@ export class MyHelicopter extends CGFobject {
         
         // Store original position for reset
         this.initialPosition = { ...this.position };
+
+        //this.textures = {heliBody, heliGlass};
         
         // Initialize helicopter state
         this.state = HeliState.LANDED;
@@ -117,7 +121,7 @@ export class MyHelicopter extends CGFobject {
         this.tailConnector = new MySolidCylinder(this.scene, 20, 1);
         
         // New bucket and rope implementation
-        this.bucket = new MyBucket(this.scene);
+        this.bucket = new MyBucket(this.scene, this.textures.water);
         this.rope = new MyRope(this.scene);
 
         this.helicopterMaterial = new CGFappearance(this.scene);
@@ -125,14 +129,14 @@ export class MyHelicopter extends CGFobject {
         this.helicopterMaterial.setDiffuse(0.6, 0.6, 0.6, 1.0);
         this.helicopterMaterial.setSpecular(1.0, 1.0, 1.0, 1.0);
         this.helicopterMaterial.setShininess(70.0);
-        this.helicopterMaterial.loadTexture("textures/heli_with_doors.png");
+        if (this.textures.heliBody) this.helicopterMaterial.setTexture(this.textures.heliBody);
 
         this.glassMaterial = new CGFappearance(this.scene);
         this.glassMaterial.setAmbient(0.1, 0.1, 0.1, 1.0);
         this.glassMaterial.setDiffuse(0.22, 0.22, 0.22, 1.0);
         this.glassMaterial.setSpecular(0.8, 0.8, 0.8, 1.0);
         this.glassMaterial.setShininess(100.0);
-        this.glassMaterial.loadTexture("textures/cockpit_glass.jpg");
+        if (this.textures.heliGlass) this.glassMaterial.setTexture(this.textures.heliGlass);
     }
 
     get isLanded() {
@@ -632,6 +636,7 @@ export class MyHelicopter extends CGFobject {
     }
     
     startDescent() {
+        console.log('Checking water at:', this.position.x, this.position.z, 'Result:', this.isOverWater());
         // If cruising over water and bucket is empty, descend to collect water
         if (this.state === HeliState.CRUISING && this.isOverWater() && !this.hasWater) {
             console.log("Descending to collect water");
@@ -660,8 +665,8 @@ export class MyHelicopter extends CGFobject {
     
     // Add new method to check if over water
     isOverWater() {
-        // Use scene's ground object to check if current position is over water
-        if (this.scene && this.scene.ground) {
+        // Ensure mask is ready before testing
+        if (this.scene && this.scene.ground && this.scene.ground.maskReady) {
             return this.scene.ground.isLake(this.position.x, this.position.z);
         }
         return false;

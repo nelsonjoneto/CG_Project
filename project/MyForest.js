@@ -11,23 +11,40 @@ import { MyTree } from './MyTree.js';
  * @param areaDepth  - Depth of the forest area
  */
 export class MyForest extends CGFobject {
-    constructor(scene, rows, cols, areaWidth, areaDepth) {
+    constructor(scene, rows, cols, areaWidth, areaDepth, trunkTexture, trunkAltTexture, leavesTexture, pineTexture, ground) {
         super(scene);
         this.scene = scene;
         this.rows = rows;
         this.cols = cols;
         this.areaWidth = areaWidth;
         this.areaDepth = areaDepth;
+        this.trunkTexture = trunkTexture;
+        this.trunkAltTexture = trunkAltTexture;
+        this.leavesTexture = leavesTexture;
+        this.pineTexture = pineTexture;
+        this.ground = ground;
         this.trees = [];
         this.initForest();
+        
     }
 
+    
     initForest() {
         const cellW = this.areaWidth / this.cols;
         const cellD = this.areaDepth / this.rows;
 
+
         for (let i = 0; i < this.rows; i++) {
             for (let j = 0; j < this.cols; j++) {
+
+                const centerX = -this.areaWidth/2 + cellW * (j + 0.5);
+                const centerZ = -this.areaDepth/2 + cellD * (i + 0.5);
+                const offsetX = (Math.random() * 0.8 - 0.4) * cellW; // ±40%
+                const offsetZ = (Math.random() * 0.8 - 0.4) * cellD;
+
+                const posX = centerX + offsetX;
+                const posZ = centerZ + offsetZ;
+
                 // Randomize tree parameters within defined ranges
                 const rotationAngle = Math.random() * 30 - 15;           // [-15°, +15°]
                 const rotationAxis  = Math.random() < 0.5 ? 'x' : 'z';  
@@ -37,6 +54,13 @@ export class MyForest extends CGFobject {
                 const greenTone     = 0.4 + Math.random() * 0.4;        // [0.4, 0.8]
                 const crownColor     = [0.05, greenTone, 0.05];          // varying green
 
+                if (this.ground.isLake(posX, posZ) || this.ground.isNearLake(posX, posZ, 20)) continue;
+                if (this.scene.isBuildingArea(posX, posZ)) continue;
+
+                const isPine = Math.random() < 0.3;
+                const trunkTexture = isPine ? this.trunkAltTexture : this.trunkTexture;
+                const crownTexture = isPine ? this.pineTexture : this.leavesTexture;
+
                 // Create tree
                 const tree = new MyTree(
                     this.scene,
@@ -44,16 +68,13 @@ export class MyForest extends CGFobject {
                     rotationAxis,
                     trunkRadius,
                     totalHeight,
-                    crownColor
+                    crownColor,
+                    trunkTexture,
+                    crownTexture
                 );
 
                 // Compute base grid position
-                const centerX = -this.areaWidth/2 + cellW * (j + 0.5);
-                const centerZ = -this.areaDepth/2 + cellD * (i + 0.5);
-
-                // Small random offset within cell (±20% of cell size)
-                const offsetX = (Math.random() * 0.4 - 0.2) * cellW;
-                const offsetZ = (Math.random() * 0.4 - 0.2) * cellD;
+                
 
                 this.trees.push({
                     tree,
@@ -64,6 +85,7 @@ export class MyForest extends CGFobject {
         }
     }
 
+    
     display() {
         this.scene.pushMatrix();
         //this.scene.translate(-90, 0, 0);

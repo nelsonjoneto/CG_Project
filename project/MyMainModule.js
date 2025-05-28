@@ -1,4 +1,4 @@
-import { CGFobject, CGFappearance, CGFtexture, CGFshader } from '../lib/CGF.js';
+import { CGFobject, CGFappearance, CGFshader } from '../lib/CGF.js';
 import { MyUnitCube } from './MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
 
@@ -11,15 +11,15 @@ const HeliportState = {
 
 // Main module class
 export class MyMainModule extends CGFobject {
-    constructor(scene, width, numFloors, windowsPerFloor, windowSize, color, windowTexture) {
+    constructor(scene, width, numFloors, windowsPerFloor, windowSize, color, textures = {}) {
         super(scene);
         this.scene = scene;
-
+        this.textures = textures;
         // Textures
-        this.doorTexture = new CGFtexture(this.scene, "textures/door.png");
-        this.heliportTexture = new CGFtexture(this.scene, "textures/H.png");
-        this.upTexture = new CGFtexture(this.scene, "textures/UP.png");
-        this.downTexture = new CGFtexture(this.scene, "textures/DOWN.png");
+        this.doorTexture = textures.door;
+        this.heliportTexture = textures.helipad;
+        this.upTexture = textures.up;
+        this.downTexture = textures.down;
 
         // Current heliport state
         this.heliportState = HeliportState.NEUTRAL;
@@ -51,11 +51,11 @@ export class MyMainModule extends CGFobject {
         this.cube = new MyUnitCube(scene, 2);
 
         // Windows (start from floor 1)
-        this.window = new MyWindow(scene, windowTexture, windowSize, windowSize);
+        this.window = new MyWindow(scene, textures.window, windowSize, windowSize);
         this.initWindowPositions(windowsPerFloor, windowSize);
 
         // Special elements
-        this.door = new MyWindow(scene, this.doorTexture, this.floorHeight * 0.8, this.floorHeight);
+        this.door = new MyWindow(scene, null, this.floorHeight * 0.8, this.floorHeight, true, this.doorTexture);
         this.helipad = new MyWindow(scene, this.heliportTexture, this.depth * 0.5, this.depth * 0.5);
 
         // Materials

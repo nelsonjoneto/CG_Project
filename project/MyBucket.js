@@ -21,11 +21,10 @@ export class MyBucket extends CGFobject {
         this.metalMaterial.setSpecular(1.0, 1.0, 1.0, 1);
         this.metalMaterial.setShininess(120);
         
-        // NEW: Water material properties
+        
         this.waterMaterial = new CGFappearance(scene);
-
         // Load water texture
-        this.waterTexture = new CGFtexture(scene, "textures/waterTex.jpg");
+        this.waterMaterial.setTexture(this.waterTexture);
         this.waterMaterial.setTexture(this.waterTexture);
         this.waterMaterial.setTextureWrap('REPEAT', 'REPEAT');
         
