@@ -6,7 +6,7 @@ import { MyBlade } from './MyBlade.js';
 import { MyTail } from './MyTail.js';
 import { MyVerticalFin } from './MyVerticalFin.js';
 import { MySolidCylinder } from './MySolidCylinder.js';
-import { MyBucket } from './MyBucket_2.js'; // New bucket implementation
+import { MyBucket } from './MyBucket.js'; // New bucket implementation
 import { MyRope } from './MyRope.js'; // New rope class
 
 // Helicopter states as enum
@@ -630,6 +630,11 @@ export class MyHelicopter extends CGFobject {
             console.log("Descending to collect water");
             this.state = HeliState.DESCENDING_TO_WATER;
             this.verticalSpeed = 0;
+            return;
+        }
+
+        if (this.hasWater) {
+            console.log("Cannot return to base with water in bucket - use the water to extinguish fires first");
             return;
         }
         

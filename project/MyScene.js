@@ -60,7 +60,7 @@ export class MyScene extends CGFscene {
     // Then create the helicopter with the building's helipad position
     const helipadPos = this.module.getHelipadPosition();
     this.helicopter = new MyHelicopter(this, helipadPos);  
-
+    this.forest = new MyForest(this, 10, 10, 60, 60);
     this.fire = new MyFire(this, 3, 3, 60, 60);
 
     this.triangle = new MyTriangle(this, 20, 20);
@@ -266,8 +266,8 @@ export class MyScene extends CGFscene {
     if (this.displayPanorama) this.panorama.display();
     if (this.displayPlane) this.ground.display();
     if (this.displayAxis) this.axis.display();
-    if (this.displayForest) {} 
-    
+    //if (this.displayForest) {this.forest.display();} 
+    //this.fire.display();
     this.module.display();
     this.helicopter.display();
   }
