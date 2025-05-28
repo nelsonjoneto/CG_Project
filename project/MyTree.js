@@ -14,7 +14,7 @@ import { CGFappearance } from '../lib/CGF.js';
  * @param crownColor - RGB array for crown color (e.g. [0, 0.6, 0])
  */
 export class MyTree extends CGFobject {
-    constructor(scene, rotationAngle, rotationAxis, trunkRadius, totalHeight, crownColor,  trunkTexture, crownTexture) {
+    constructor(scene, rotationAngle, rotationAxis, trunkRadius, totalHeight, crownColor, trunkTexture, crownTexture) {
         super(scene);
 
         this.scene = scene;
@@ -61,12 +61,16 @@ export class MyTree extends CGFobject {
             );
         }
 
+        // Set up trunk material with improved wrapping mode
         this.currentTrunkMaterial = new CGFappearance(scene);
         this.currentTrunkMaterial.setAmbient(0.5, 0.4, 0.3, 1); // Tom médio
         this.currentTrunkMaterial.setDiffuse(0.6, 0.5, 0.4, 1);
         this.currentTrunkMaterial.setSpecular(0.2, 0.2, 0.2, 1);
         this.currentTrunkMaterial.setShininess(10);
         this.currentTrunkMaterial.setTexture(trunkTexture);
+        
+        // Fix: Use CLAMP_TO_EDGE for trunk texture to avoid visible seams
+        this.currentTrunkMaterial.setTextureWrap('CLAMP_TO_EDGE', 'CLAMP_TO_EDGE');
 
         this.crownTexture = crownTexture;
         // Crown material
@@ -75,9 +79,6 @@ export class MyTree extends CGFobject {
         this.crownMaterial.setDiffuse(...crownColor, 1);
         this.crownMaterial.setTexture(this.crownTexture);
         this.crownMaterial.setTextureWrap('REPEAT', 'REPEAT');
-
-        // Configure texture wrapping for the trunk material
-        this.currentTrunkMaterial.setTextureWrap('REPEAT', 'REPEAT');
 
         // Store stepY for display
         this._stepY = stepY;

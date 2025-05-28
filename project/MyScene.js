@@ -23,7 +23,7 @@ export class MyScene extends CGFscene {
     this.thirdPersonHeight = 5;      // Height above helicopter
     
     // Store default camera settings for initialization
-    this.defaultCameraPosition = vec3.fromValues(10, 10, 10);
+    this.defaultCameraPosition = vec3.fromValues(50, 50, 50);
     this.defaultCameraTarget = vec3.fromValues(0, 0, 0);
     
     // Add this flag to track camera mode changes
@@ -101,7 +101,7 @@ export class MyScene extends CGFscene {
     down: new CGFtexture(this, "textures/DOWN.png"),
 
     // Árvores - DONE
-    trunk: new CGFtexture(this, "textures/trunk.jpg"),
+    trunk: new CGFtexture(this, "textures/trunk2.jpg"),
     trunkAlt: new CGFtexture(this, "textures/trunk3.jpg"),
     leaves: new CGFtexture(this, "textures/leaves.png"),
     pine: new CGFtexture(this, "textures/pinetree.png"),

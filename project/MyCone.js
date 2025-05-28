@@ -20,40 +20,47 @@ export class MyCone extends CGFobject {
         this.initBuffers();
     }
 
+    // Update the initBuffers method with improved texture mapping
     initBuffers() {
         this.vertices = [];
         this.indices = [];
         this.normals = [];
-        this.texCoords = []; // Coordenadas de textura
+        this.texCoords = [];
 
         const halfBase = this.baseWidth / 2;
-        let ang = 0;
         const alphaAng = (2 * Math.PI) / this.slices;
-
-        for (let i = 0; i < this.slices; i++) {
-            const x = Math.cos(ang) * halfBase;
-            const z = -Math.sin(ang) * halfBase;
-
-            this.vertices.push(x, 0, z);
-
-            const normalX = Math.cos(ang);
-            const normalZ = -Math.sin(ang);
-            const normalY = this.height / Math.sqrt(this.height ** 2 + halfBase ** 2);
-            this.normals.push(normalX, normalY, normalZ);
-
-            this.indices.push(i, (i + 1) % this.slices, this.slices);
-
-            // Calcula as coordenadas de textura para a lateral do cone
-            const u = i / this.slices;
-            const v = 0;
-            this.texCoords.push(u, v);
-            ang += alphaAng;
-        }
-
-        // Vértice do topo
+        
+        // Add vertex at the top
         this.vertices.push(0, this.height, 0);
         this.normals.push(0, 1, 0);
-        this.texCoords.push(0.5, 1); // Coordenadas de textura para o topo
+        this.texCoords.push(0.5, 0); // Top center of texture
+        
+        // Generate the lateral vertices
+        for (let i = 0; i <= this.slices; i++) {  // Note: <= to include closing vertex
+            // Calculate angle - complete the loop for texture mapping
+            const ang = i * alphaAng;
+            
+            // Position
+            const x = Math.cos(ang) * halfBase;
+            const z = -Math.sin(ang) * halfBase;
+            this.vertices.push(x, 0, z);
+            
+            // Normal vector (angled outward and up)
+            const normalX = Math.cos(ang);
+            const normalZ = -Math.sin(ang);
+            const normalY = this.height / Math.sqrt(this.height**2 + halfBase**2);
+            this.normals.push(normalX, normalY, normalZ);
+            
+            // Texture mapping - full wrap from 0-1
+            const u = i / this.slices;
+            const v = 1; // Base is at bottom of texture
+            this.texCoords.push(u, v);
+        }
+        
+        // Create triangle indices - fan from top vertex
+        for (let i = 0; i < this.slices; i++) {
+            this.indices.push(0, i+1, i+2);
+        }
 
         this.primitiveType = this.scene.gl.TRIANGLES;
         this.initGLBuffers();
