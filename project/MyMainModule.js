@@ -2,6 +2,7 @@ import { CGFobject, CGFappearance} from '../lib/CGF.js';
 import { MyUnitCube } from './MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
 import { MyHelipadLight } from './MyHelipadLight.js';
+import { MyPlane } from './MyPlane.js';
 
 // Heliport animation
 const HeliportState = {
@@ -16,11 +17,14 @@ export class MyMainModule extends CGFobject {
         super(scene);
         this.scene = scene;
         this.textures = textures;
+        
         // Textures
         this.doorTexture = textures.door;
         this.heliportTexture = textures.helipad;
         this.upTexture = textures.up;
         this.downTexture = textures.down;
+        this.wallTexture = textures.wall;
+        this.roofTexture = textures.roof;
 
         // Animation state properties
         this.heliportState = HeliportState.NEUTRAL;
@@ -37,8 +41,11 @@ export class MyMainModule extends CGFobject {
         this.floorHeight = width / numFloors;
         this.helipadSize = this.depth * 0.5;
 
-        // Main structure
-        this.cube = new MyUnitCube(scene, 2);
+        // Main structure - use cube without top face
+        this.cube = new MyUnitCube(scene, 2, { includeTop: false });
+        
+        // Create plane for roof
+        this.roofPlane = new MyPlane(scene, 20, 0, 1, 0, 1);
 
         // Windows (start from floor 1)
         this.window = new MyWindow(scene, textures.window, windowSize, windowSize);
@@ -61,6 +68,20 @@ export class MyMainModule extends CGFobject {
         this.wallMaterial = new CGFappearance(scene);
         this.wallMaterial.setAmbient(...color);
         this.wallMaterial.setDiffuse(...color);
+        
+        if (this.wallTexture) {
+            this.wallMaterial.setTexture(this.wallTexture);
+            this.wallMaterial.setTextureWrap('REPEAT', 'REPEAT');
+        }
+        
+        // Set up roof material
+        this.roofMaterial = new CGFappearance(scene);
+        this.roofMaterial.setAmbient(0.5, 0.5, 0.5, 1);
+        this.roofMaterial.setDiffuse(0.7, 0.7, 0.7, 1);
+        if (this.roofTexture) {
+            this.roofMaterial.setTexture(this.roofTexture);
+            this.roofMaterial.setTextureWrap('REPEAT', 'REPEAT');
+        }
     }
 
     initWindowPositions(windowsPerFloor, windowSize) {
@@ -177,11 +198,34 @@ export class MyMainModule extends CGFobject {
     }
 
     displayStructure() {
+        // Display main building walls
         this.scene.pushMatrix();
         this.scene.scale(this.width, this.totalHeight, this.depth);
         this.wallMaterial.apply();
         this.cube.display();
         this.scene.popMatrix();
+        
+        // Display roof as a separate plane if we have a texture
+        if (this.roofTexture) {
+            this.scene.pushMatrix();
+            
+            // Position on top of the building
+            this.scene.translate(0, this.totalHeight + 0.001, 0);
+            
+            // Rotate to horizontal
+            this.scene.rotate(-Math.PI/2, 1, 0, 0);
+            
+            // Scale to match building dimensions
+            this.scene.scale(this.width, this.depth, 1);
+            
+            // Apply roof material
+            this.roofMaterial.apply();
+            
+            // Display the roof plane
+            this.roofPlane.display();
+            
+            this.scene.popMatrix();
+        }
     }
 
     displayWindows() {
@@ -229,16 +273,15 @@ export class MyMainModule extends CGFobject {
         this.scene.popMatrix();
     }
     
+    // Update display method sequence to ensure proper layering
     display() {
         this.scene.pushMatrix();
         
-        // Main structure
+        // Main structure with borders
         this.displayStructure();
         
-        // Windows
+        // Special elements and windows (now after structure+borders)
         this.displayWindows();
-        
-        // Special elements
         this.displayDoor();
         this.displayHelipad();
         

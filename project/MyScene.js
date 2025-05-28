@@ -59,7 +59,16 @@ export class MyScene extends CGFscene {
     // First create the building
     this.module = new MyBuilding(this, 15, 2, 2, 
       [this.textures.window, this.textures.window, this.textures.window],
-      [0.7, 0.7, 0.7, 1.0], {door: this.textures.door, helipad: this.textures.helipad, up: this.textures.up, down: this.textures.down});
+      [0.7, 0.7, 0.7, 1.0], 
+      {
+        door: this.textures.door, 
+        helipad: this.textures.helipad, 
+        up: this.textures.up, 
+        down: this.textures.down,
+        wall: this.textures.wall,
+        roof: this.textures.roof
+      }
+    );
 
     // Then create the helicopter with the building's helipad position
     const helipadPos = this.module.getHelipadPosition();
@@ -107,7 +116,11 @@ export class MyScene extends CGFscene {
     pine: new CGFtexture(this, "textures/pinetree.png"),
 
     // ShaderScene
-    waterMap: new CGFtexture(this, "textures/waterMap.jpg")
+    waterMap: new CGFtexture(this, "textures/waterMap.jpg"),
+
+    // Building textures
+    wall: new CGFtexture(this, "textures/building_wall.jpg"),
+    roof: new CGFtexture(this, "textures/roof.webp")
   };
 }
 

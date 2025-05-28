@@ -1,9 +1,10 @@
 import { CGFobject, CGFappearance } from '../lib/CGF.js';
 import { MyUnitCube } from './MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
+import { MyPlane } from './MyPlane.js';
 
 export class MyModule extends CGFobject {
-    constructor(scene, width, numFloors, windowsPerFloor, windowSize, color, windowTexture, buldingNumber) {
+    constructor(scene, width, numFloors, windowsPerFloor, windowSize, color, windowTexture, buildingNumber, wallTexture = null, roofTexture = null) {
         super(scene);
         this.scene = scene;
         
@@ -13,18 +14,37 @@ export class MyModule extends CGFobject {
         this.numFloors = numFloors;
         this.floorHeight = (width / 0.75) / (numFloors + 1);
         this.totalHeight = this.floorHeight * numFloors;
-
-        // Main cube structure
-        this.cube = new MyUnitCube(scene, buldingNumber);
+        
+        // Create cube without top face for walls
+        this.cube = new MyUnitCube(scene, buildingNumber, { includeTop: false });
+        
+        // Create roof plane
+        this.roofPlane = new MyPlane(scene, 20, 0, 1, 0, 1);
         
         // Windows
         this.window = new MyWindow(scene, windowTexture, windowSize, windowSize, false);
         this.initWindowPositions(windowsPerFloor, windowSize);
 
-        // Material
+        // Wall Material with texture
         this.wallMaterial = new CGFappearance(scene);
         this.wallMaterial.setAmbient(...color);
         this.wallMaterial.setDiffuse(...color);
+        if (wallTexture) {
+            this.wallMaterial.setTexture(wallTexture);
+            this.wallMaterial.setTextureWrap('REPEAT', 'REPEAT');
+        }
+        
+        // Roof Material with texture
+        this.roofMaterial = new CGFappearance(scene);
+        this.roofMaterial.setAmbient(0.5, 0.5, 0.5, 1);
+        this.roofMaterial.setDiffuse(0.7, 0.7, 0.7, 1);
+        if (roofTexture) {
+            this.roofMaterial.setTexture(roofTexture);
+            this.roofMaterial.setTextureWrap('REPEAT', 'REPEAT');
+        }
+        
+        // Store if we have a roof texture
+        this.hasRoofTexture = !!roofTexture;
     }
 
     initWindowPositions(windowsPerFloor, windowSize) {
@@ -48,16 +68,45 @@ export class MyModule extends CGFobject {
 
 
     displayStructure() {
+        // Display main building walls
+        this.scene.pushMatrix();
+        this.scene.scale(this.width, this.totalHeight, this.depth);
+        this.wallMaterial.apply();
+        this.cube.display();
+        this.scene.popMatrix();
+        
+        // Display roof as a separate plane if we have a texture
+        if (this.hasRoofTexture) {
+            this.scene.pushMatrix();
+            
+            // Position on top of the building
+            this.scene.translate(0, this.totalHeight + 0.001, 0);
+            
+            // Rotate to horizontal
+            this.scene.rotate(-Math.PI/2, 1, 0, 0);
+            
+            // Scale to match building dimensions
+            this.scene.scale(this.width, this.depth, 1);
+            
+            // Apply roof material
+            this.roofMaterial.apply();
+            
+            // Display the roof plane
+            this.roofPlane.display();
+            
+            this.scene.popMatrix();
+        }
+    }
+    
+    display() {
         this.scene.pushMatrix();
         
-        // Scale unit cube to module dimensions
-        this.scene.scale(
-            this.width,
-            this.totalHeight,
-            this.depth
-        );
+        // Draw scaled cube structure
+        this.displayStructure();
         
-        this.cube.display();
+        // Add windows
+        this.displayWindows();
+        
         this.scene.popMatrix();
     }
 
@@ -69,18 +118,5 @@ export class MyModule extends CGFobject {
             this.window.display();
             this.scene.popMatrix();
         }
-    }
-
-    display() {
-        this.scene.pushMatrix();
-        this.wallMaterial.apply();
-        
-        // Draw scaled cube structure
-        this.displayStructure();
-        
-        // Add windows
-        this.displayWindows();
-        
-        this.scene.popMatrix();
     }
 }

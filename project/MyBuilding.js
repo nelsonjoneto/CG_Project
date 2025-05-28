@@ -20,8 +20,7 @@ export class MyBuilding extends CGFobject {
 
         const windowSize = Math.min(((this.lateralWidth * 0.8) / windowsPerFloor) * 0.8, (this.lateralWidth / (numFloors)) * 0.6);
 
-        
-        // Create modules
+        // Create modules with textures
         this.modules = [
             // Left module
             new MyModule(
@@ -32,14 +31,15 @@ export class MyBuilding extends CGFobject {
                 windowSize,
                 color,
                 windowTextures[0],
-                1
+                1,              // building number
+                textures.wall,  // wall texture
+                textures.roof   // roof texture
             ),
-
-            // Main central module
+            // Main module
             new MyMainModule(
                 scene,
                 this.mainWidth,
-                numFloors + 1, // +1 floor for main module
+                numFloors + 1,
                 windowsPerFloor,
                 windowSize,
                 color,
@@ -48,10 +48,11 @@ export class MyBuilding extends CGFobject {
                     door: scene.textures.door,
                     helipad: scene.textures.helipad,
                     up: scene.textures.up,
-                    down: scene.textures.down
+                    down: scene.textures.down,
+                    wall: textures.wall,  // Added wall texture
+                    roof: textures.roof   // Added roof texture
                 }
             ),
-
             // Right module
             new MyModule(
                 scene,
@@ -60,8 +61,10 @@ export class MyBuilding extends CGFobject {
                 windowsPerFloor,
                 windowSize,
                 color,
-                windowTextures[2], // Right texture
-                1
+                windowTextures[2],
+                2,              // building number
+                textures.wall,  // wall texture
+                textures.roof   // roof texture
             )
         ];
     }
