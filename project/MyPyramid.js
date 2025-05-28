@@ -24,7 +24,7 @@ export class MyPyramid extends CGFobject {
         this.vertices = [];
         this.indices = [];
         this.normals = [];
-        this.texCoords = []; // Array para coordenadas de textura
+        this.texCoords = []; 
 
         const halfBase = this.baseWidth / 2;
         let ang = 0;
@@ -36,10 +36,12 @@ export class MyPyramid extends CGFobject {
             const ca = Math.cos(ang);
             const caa = Math.cos(ang + alphaAng);
 
+            // Pyramid vertices (apex, base1, base2)
             this.vertices.push(0, this.height, 0);
             this.vertices.push(ca * halfBase, 0, -sa * halfBase);
             this.vertices.push(caa * halfBase, 0, -saa * halfBase);
 
+            // Calculate normal vector
             const normal = [
                 saa - sa,
                 ca * saa - sa * caa,
@@ -54,20 +56,31 @@ export class MyPyramid extends CGFobject {
             normal[1] /= nsize;
             normal[2] /= nsize;
 
+            // Apply normals to all 3 vertices of this face
             this.normals.push(...normal);
             this.normals.push(...normal);
             this.normals.push(...normal);
 
+            // Add index for this triangle
             this.indices.push(3 * i, 3 * i + 1, 3 * i + 2);
 
-            // Calcula as coordenadas de textura para a face lateral da pirâmide
-            const u1 = 0.5;
-            const v1 = 1;
-            const u2 = (ca + 1) / 2;
-            const v2 = 0;
-            const u3 = (caa + 1) / 2;
-            const v3 = 0;
-            this.texCoords.push(u1, v1, u2, v2, u3, v3);
+            // IMPROVED TEXTURE MAPPING:
+            
+            // Map texture coordinates properly:
+            // Apex: center-top of texture segment
+            const u1 = (i + 0.5) / this.slices;
+            const v1 = 0;
+            
+            // Base vertices: map to bottom corners of texture segment
+            const u2 = i / this.slices;
+            const v2 = 1;
+            const u3 = (i + 1) / this.slices;
+            const v3 = 1;
+            
+            // Add texture coordinates in vertex order
+            this.texCoords.push(u1, v1);
+            this.texCoords.push(u2, v2);
+            this.texCoords.push(u3, v3);
 
             ang += alphaAng;
         }

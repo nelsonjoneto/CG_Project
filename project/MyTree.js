@@ -54,7 +54,7 @@ export class MyTree extends CGFobject {
         // Create pyramid array (base = 3.5 * trunkRadius)
         this.crownPyramids = [];
         const baseWidth = trunkRadius * 3.5;
-        const pyramidFaces = 6;
+        const pyramidFaces = Math.floor(Math.random() * 4) + 4;
         for (let i = 0; i < count; i++) {
             this.crownPyramids.push(
                 new MyPyramid(scene, pyramidFaces, 1, baseWidth, this.pyramidHeight)
