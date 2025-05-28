@@ -86,28 +86,46 @@ export class MyTree extends CGFobject {
 
     display() {
         this.scene.pushMatrix();
-
-        // Apply tree inclination
-        if (this.rotationAxis === 'x') {
-            this.scene.rotate(this.rotationAngle, 1, 0, 0);
-        } else {
-            this.scene.rotate(this.rotationAngle, 0, 0, 1);
+        
+        // CALCULATE BURIAL ADJUSTMENT: how much the tree needs to sink based on inclination
+        let burialAdjustment = 0;
+        if (this.rotationAngle !== 0) {
+            // When tree is inclined, the base edge lifts up by approximately radius * sin(angle)
+            burialAdjustment = this.trunkRadius * Math.sin(Math.abs(this.rotationAngle));
         }
 
-        // Draw trunk with selected material
+        // Apply rotation and burial adjustment
+        if (this.rotationAxis === 'x') {
+            // Rotate around X axis
+            this.scene.rotate(this.rotationAngle, 1, 0, 0);
+            // Translate down to bury the tree
+            this.scene.translate(0, -burialAdjustment, 0);
+        } else if (this.rotationAxis === 'z') {
+            // Rotate around Z axis
+            this.scene.rotate(this.rotationAngle, 0, 0, 1);
+            // Translate down to bury the tree
+            this.scene.translate(0, -burialAdjustment, 0);
+        }
+
+        // Render trunk
         this.currentTrunkMaterial.apply();
         this.trunk.display();
-
-        // Draw crown pyramids
+        
+        // Apply crown material for all pyramids
         this.crownMaterial.apply();
-        for (let i = 0; i < this.crownPyramids.length; i++) {
+        
+        // Render crown pyramids
+        let yOffset = this.crownBaseY;
+        for (const pyramid of this.crownPyramids) {
             this.scene.pushMatrix();
-            const y = this.crownBaseY + i * this._stepY;
-            this.scene.translate(0, y, 0);
-            this.crownPyramids[i].display();
+            this.scene.translate(0, yOffset, 0);
+            pyramid.display();
             this.scene.popMatrix();
+            
+            // Move up for next pyramid (with overlap)
+            yOffset += this._stepY;
         }
-
+        
         this.scene.popMatrix();
     }
 }
