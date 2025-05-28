@@ -1,12 +1,13 @@
-import { CGFobject, CGFappearance, CGFtexture, CGFshader } from '../lib/CGF.js';
+import { CGFobject, CGFappearance, CGFtexture } from '../lib/CGF.js';
 import { MyUnitCube } from './MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
+import { MyHelipadLight } from './MyHelipadLight.js';
 
 // Heliport animation states
 const HeliportState = {
-    NEUTRAL: 0,
-    TAKEOFF: 1,
-    LANDING: 2
+    NEUTRAL: 'neutral',
+    TAKEOFF: 'takeoff',
+    LANDING: 'landing'
 };
 
 // Main module class
@@ -15,30 +16,18 @@ export class MyMainModule extends CGFobject {
         super(scene);
         this.scene = scene;
 
-        // Textures
+        // Load textures
         this.doorTexture = new CGFtexture(this.scene, "textures/door.png");
         this.heliportTexture = new CGFtexture(this.scene, "textures/H.png");
         this.upTexture = new CGFtexture(this.scene, "textures/UP.png");
         this.downTexture = new CGFtexture(this.scene, "textures/DOWN.png");
 
-        // Current heliport state
+        // Animation state properties
         this.heliportState = HeliportState.NEUTRAL;
-        this.lastHeliportStateChange = 0;
-        
-        // Create heliport shader
-        this.heliportShader = new CGFshader(
-            this.scene.gl,
-            "shaders/heliport.vert",
-            "shaders/heliport.frag"
-        );
-        
-        // Initialize shader uniforms
-        this.heliportShader.setUniformsValues({
-            uBaseTexture: 0,
-            uManeuverTexture: 1,
-            timeFactor: 0,
-            isAnimating: 0
-        });
+        this.flashTimer = 0;
+        this.flashInterval = 500; // Flash every 500ms
+        this.isShowingAlternate = false;
+        this.lastStateChangeTime = 0;
 
         // Dimensions
         this.width = width;
@@ -46,17 +35,27 @@ export class MyMainModule extends CGFobject {
         this.numFloors = numFloors;
         this.totalHeight = width;
         this.floorHeight = width / numFloors;
+        this.helipadSize = this.depth * 0.5;
 
         // Main structure
         this.cube = new MyUnitCube(scene, 2);
 
-        // Windows (start from floor 1)
+        // Windows
         this.window = new MyWindow(scene, windowTexture, windowSize, windowSize);
         this.initWindowPositions(windowsPerFloor, windowSize);
 
         // Special elements
         this.door = new MyWindow(scene, this.doorTexture, this.floorHeight * 0.8, this.floorHeight);
         this.helipad = new MyWindow(scene, this.heliportTexture, this.depth * 0.5, this.depth * 0.5);
+
+        // Calculate light size relative to helipad
+        const lightSizeFactor = this.helipadSize / 5;  // Lights will be 1/5 of helipad size
+
+        // NEW: Corner lights with size proportional to helipad
+        this.cornerLights = [];
+        for (let i = 0; i < 4; i++) {
+            this.cornerLights.push(new MyHelipadLight(scene, lightSizeFactor));
+        }
 
         // Materials
         this.wallMaterial = new CGFappearance(scene);
@@ -85,43 +84,95 @@ export class MyMainModule extends CGFobject {
 
     // Update method to be called from scene's update
     update(t) {
-        // Update shader time factor for animation
-        this.heliportShader.setUniformsValues({
-            timeFactor: t * 0.001 % 1000
-        });
-        
-        // Reset to neutral state after 5 seconds of animation
-        if (this.heliportState !== HeliportState.NEUTRAL) {
-            if (t - this.lastHeliportStateChange > 5000) {
-                this.setHeliportState(HeliportState.NEUTRAL);
+        // Return to neutral state after 5 seconds of animation, but only for takeoff
+        // Landing animation will continue until helicopter is fully landed
+        if (this.heliportState === HeliportState.TAKEOFF) {
+            if (t - this.lastStateChangeTime > 5000) {
+                this.setHeliportState(HeliportState.NEUTRAL, t);
             }
+        }
+
+        // Handle texture flashing
+        if (this.heliportState !== HeliportState.NEUTRAL) {
+            // Check if it's time to toggle the texture
+            if (t - this.flashTimer > this.flashInterval) {
+                this.flashTimer = t;
+                this.isShowingAlternate = !this.isShowingAlternate;
+                this.updateHelipadTexture();
+            }
+            
+            // NEW: Update corner lights with pulsing effect
+            this.updateCornerLights(t);
+        } else {
+            // In neutral state, always show the normal texture
+            if (this.isShowingAlternate) {
+                this.isShowingAlternate = false;
+                this.updateHelipadTexture();
+            }
+            
+            // Turn off corner lights in neutral state
+            this.cornerLights.forEach(light => light.setActive(false));
+        }
+    }
+    
+    // NEW: Update corner lights with pulsing effect
+    updateCornerLights(t) {
+        // Create sinusoidal pulsing effect
+        const sinValue = Math.sin(t * 0.010) * 0.5 + 0.5; // Range 0-1
+        const pulseIntensity = sinValue; // Range 0.5-1.0
+        
+        // Update all corner lights with current intensity
+        this.cornerLights.forEach(light => {
+            light.setActive(true, pulseIntensity);
+        });
+    }
+    
+    // Update the helipad texture based on current state and flash status
+    updateHelipadTexture() {
+        if (this.isShowingAlternate) {
+            if (this.heliportState === HeliportState.TAKEOFF) {
+                this.helipad.windowMaterial.setTexture(this.upTexture);
+            } else if (this.heliportState === HeliportState.LANDING) {
+                this.helipad.windowMaterial.setTexture(this.downTexture);
+            }
+        } else {
+            this.helipad.windowMaterial.setTexture(this.heliportTexture);
         }
     }
     
     // Method to set heliport state
-    setHeliportState(state) {
+    setHeliportState(state, t) {
         this.heliportState = state;
-        this.lastHeliportStateChange = Date.now();
+        this.lastStateChangeTime = t;
+        this.flashTimer = t;
         
-        // Update shader uniforms based on state
-        if (state === HeliportState.NEUTRAL) {
-            this.heliportShader.setUniformsValues({
-                isAnimating: 0
-            });
+        // Begin with alternate texture immediately for better visibility
+        if (state === 'takeoff' || state === 'landing') {
+            this.isShowingAlternate = true;
+            
+            // Apply the appropriate texture immediately
+            if (state === 'takeoff') {
+                this.helipad.windowMaterial.setTexture(this.upTexture);
+            } else {
+                this.helipad.windowMaterial.setTexture(this.downTexture);
+            }
+            
+            // Activate corner lights immediately
+            this.cornerLights.forEach(light => light.setActive(true, 0.75));
         } else {
-            this.heliportShader.setUniformsValues({
-                isAnimating: 1
-            });
+            // For neutral state, use normal H texture and turn off lights
+            this.isShowingAlternate = false;
+            this.helipad.windowMaterial.setTexture(this.heliportTexture);
+            this.cornerLights.forEach(light => light.setActive(false));
         }
     }
     
     // Method to get the helipad position for the helicopter's initial position
     getHelipadPosition() {
-        // Calculate the position on top of the main module
         return {
-            x: 0,           // Centered horizontally
-            y: this.totalHeight, // Top of the building
-            z: 0            // Centered in depth
+            x: 0,
+            y: this.totalHeight,
+            z: 0
         };
     }
 
@@ -149,35 +200,33 @@ export class MyMainModule extends CGFobject {
         this.scene.popMatrix();
     }
 
+    // NEW: Updated to include corner lights
     displayHelipad() {
-        // Save current shader
-        const currentShader = this.scene.activeShader;
-        
-        // Use our heliport shader
-        this.scene.setActiveShader(this.heliportShader);
-        
-        // Bind appropriate textures based on state
-        this.heliportTexture.bind(0); // Base texture is always H
-        
-        // Bind the appropriate maneuver texture
-        if (this.heliportState === HeliportState.TAKEOFF) {
-            this.upTexture.bind(1);
-        } else if (this.heliportState === HeliportState.LANDING) {
-            this.downTexture.bind(1);
-        } else {
-            // In neutral state, just bind the base texture again
-            this.heliportTexture.bind(1);
-        }
+        // Use the stored helipad size
+        const cornerOffset = this.helipadSize * 0.4;
         
         this.scene.pushMatrix();
         this.scene.translate(0, this.totalHeight + 0.01, 0);
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
         
+        // Display helipad texture
         this.helipad.display();
-        this.scene.popMatrix();
         
-        // Restore original shader
-        this.scene.setActiveShader(currentShader);
+        // Display corner lights
+        for (let i = 0; i < 4; i++) {
+            const x = ((i % 2) * 2 - 1) * cornerOffset;
+            const z = (Math.floor(i / 2) * 2 - 1) * cornerOffset;
+            
+            this.scene.pushMatrix();
+            // Position at the corner
+            this.scene.translate(x, z, 0.001);
+            
+            // Display the light
+            this.cornerLights[i].display();
+            this.scene.popMatrix();
+        }
+        
+        this.scene.popMatrix();
     }
     
     display() {

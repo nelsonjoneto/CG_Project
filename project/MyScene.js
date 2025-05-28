@@ -232,7 +232,16 @@ export class MyScene extends CGFscene {
     
     // Update other elements
     if (this.fire) this.fire.update(delta_t);
-    if (this.helicopter) this.helicopter.update(delta_t);
+    
+    // Update helicopter
+    if (this.helicopter) {
+        this.helicopter.update(delta_t);
+    }
+    
+    // Update building with current time and helicopter state
+    if (this.module && this.helicopter) {
+        this.module.update(t, this.helicopter.state);
+    }
     
     // Check camera mode before updating
     if (this.cameraMode === 'ThirdPerson') {
