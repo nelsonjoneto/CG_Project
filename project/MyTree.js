@@ -2,7 +2,6 @@ import { CGFobject } from '../lib/CGF.js';
 import { MyCone } from './MyCone.js';
 import { MyPyramid } from './MyPyramid.js';
 import { CGFappearance } from '../lib/CGF.js';
-import { CGFtexture } from '../lib/CGF.js';
 
 /**
  * MyTree
@@ -15,7 +14,7 @@ import { CGFtexture } from '../lib/CGF.js';
  * @param crownColor - RGB array for crown color (e.g. [0, 0.6, 0])
  */
 export class MyTree extends CGFobject {
-    constructor(scene, rotationAngle, rotationAxis, trunkRadius, totalHeight, crownColor) {
+    constructor(scene, rotationAngle, rotationAxis, trunkRadius, totalHeight, crownColor,  trunkTexture, crownTexture) {
         super(scene);
 
         this.scene = scene;
@@ -62,22 +61,14 @@ export class MyTree extends CGFobject {
             );
         }
 
-        if (Math.random() < 0.5) {
-            this.currentTrunkMaterial = new CGFappearance(scene);
-            this.currentTrunkMaterial.setAmbient(0.3, 0.2, 0.1, 1); // Darker brown
-            this.currentTrunkMaterial.setDiffuse(0.3, 0.2, 0.1, 1);
-            this.currentTrunkMaterial.setTexture(new CGFtexture(scene, "textures/trunk.jpg"));
-            this.crownTexture = new CGFtexture(scene, "textures/leaves.png");
-        } else {
-            this.currentTrunkMaterial = new CGFappearance(scene);
-            this.currentTrunkMaterial.setAmbient(0.8, 0.8, 0.7, 1); // Light grayish-white
-            this.currentTrunkMaterial.setDiffuse(0.9, 0.9, 0.8, 1);
-            this.currentTrunkMaterial.setSpecular(0.2, 0.2, 0.2, 1);
-            this.currentTrunkMaterial.setShininess(20);
-            this.currentTrunkMaterial.setTexture(new CGFtexture(scene, "textures/trunk3.jpg"));
-            this.crownTexture = new CGFtexture(scene, "textures/pinetree.png");
-        }
+        this.currentTrunkMaterial = new CGFappearance(scene);
+        this.currentTrunkMaterial.setAmbient(0.5, 0.4, 0.3, 1); // Tom médio
+        this.currentTrunkMaterial.setDiffuse(0.6, 0.5, 0.4, 1);
+        this.currentTrunkMaterial.setSpecular(0.2, 0.2, 0.2, 1);
+        this.currentTrunkMaterial.setShininess(10);
+        this.currentTrunkMaterial.setTexture(trunkTexture);
 
+        this.crownTexture = crownTexture;
         // Crown material
         this.crownMaterial = new CGFappearance(scene);
         this.crownMaterial.setAmbient(...crownColor, 1);

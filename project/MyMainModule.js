@@ -1,4 +1,4 @@
-import { CGFobject, CGFappearance, CGFtexture } from '../lib/CGF.js';
+import { CGFobject, CGFappearance} from '../lib/CGF.js';
 import { MyUnitCube } from './MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
 import { MyHelipadLight } from './MyHelipadLight.js';
@@ -12,15 +12,15 @@ const HeliportState = {
 
 // Main module class
 export class MyMainModule extends CGFobject {
-    constructor(scene, width, numFloors, windowsPerFloor, windowSize, color, windowTexture) {
+    constructor(scene, width, numFloors, windowsPerFloor, windowSize, color, textures = {}) {
         super(scene);
         this.scene = scene;
-
-        // Load textures
-        this.doorTexture = new CGFtexture(this.scene, "textures/door.png");
-        this.heliportTexture = new CGFtexture(this.scene, "textures/H.png");
-        this.upTexture = new CGFtexture(this.scene, "textures/UP.png");
-        this.downTexture = new CGFtexture(this.scene, "textures/DOWN.png");
+        this.textures = textures;
+        // Textures
+        this.doorTexture = textures.door;
+        this.heliportTexture = textures.helipad;
+        this.upTexture = textures.up;
+        this.downTexture = textures.down;
 
         // Animation state properties
         this.heliportState = HeliportState.NEUTRAL;
@@ -40,12 +40,12 @@ export class MyMainModule extends CGFobject {
         // Main structure
         this.cube = new MyUnitCube(scene, 2);
 
-        // Windows
-        this.window = new MyWindow(scene, windowTexture, windowSize, windowSize);
+        // Windows (start from floor 1)
+        this.window = new MyWindow(scene, textures.window, windowSize, windowSize);
         this.initWindowPositions(windowsPerFloor, windowSize);
 
         // Special elements
-        this.door = new MyWindow(scene, this.doorTexture, this.floorHeight * 0.8, this.floorHeight);
+        this.door = new MyWindow(scene, null, this.floorHeight * 0.8, this.floorHeight, true, this.doorTexture);
         this.helipad = new MyWindow(scene, this.heliportTexture, this.depth * 0.5, this.depth * 0.5);
 
         // Calculate light size relative to helipad
@@ -100,7 +100,7 @@ export class MyMainModule extends CGFobject {
                 this.isShowingAlternate = !this.isShowingAlternate;
                 this.updateHelipadTexture();
             }
-            
+
             // NEW: Update corner lights with pulsing effect
             this.updateCornerLights(t);
         } else {
@@ -109,24 +109,24 @@ export class MyMainModule extends CGFobject {
                 this.isShowingAlternate = false;
                 this.updateHelipadTexture();
             }
-            
+
             // Turn off corner lights in neutral state
             this.cornerLights.forEach(light => light.setActive(false));
         }
     }
-    
+
     // NEW: Update corner lights with pulsing effect
     updateCornerLights(t) {
         // Create sinusoidal pulsing effect
         const sinValue = Math.sin(t * 0.010) * 0.5 + 0.5; // Range 0-1
         const pulseIntensity = sinValue; // Range 0.5-1.0
-        
+
         // Update all corner lights with current intensity
         this.cornerLights.forEach(light => {
             light.setActive(true, pulseIntensity);
         });
     }
-    
+
     // Update the helipad texture based on current state and flash status
     updateHelipadTexture() {
         if (this.isShowingAlternate) {
@@ -149,14 +149,14 @@ export class MyMainModule extends CGFobject {
         // Begin with alternate texture immediately for better visibility
         if (state === 'takeoff' || state === 'landing') {
             this.isShowingAlternate = true;
-            
+
             // Apply the appropriate texture immediately
             if (state === 'takeoff') {
                 this.helipad.windowMaterial.setTexture(this.upTexture);
             } else {
                 this.helipad.windowMaterial.setTexture(this.downTexture);
             }
-            
+
             // Activate corner lights immediately
             this.cornerLights.forEach(light => light.setActive(true, 0.75));
         } else {
@@ -211,16 +211,16 @@ export class MyMainModule extends CGFobject {
         
         // Display helipad texture
         this.helipad.display();
-        
+
         // Display corner lights
         for (let i = 0; i < 4; i++) {
             const x = ((i % 2) * 2 - 1) * cornerOffset;
             const z = (Math.floor(i / 2) * 2 - 1) * cornerOffset;
-            
+
             this.scene.pushMatrix();
             // Position at the corner
             this.scene.translate(x, z, 0.001);
-            
+
             // Display the light
             this.cornerLights[i].display();
             this.scene.popMatrix();

@@ -1,6 +1,5 @@
 import { CGFobject } from '../lib/CGF.js';
 import { CGFappearance } from '../lib/CGF.js';
-import { CGFtexture } from '../lib/CGF.js';
 export class MyBlade extends CGFobject {
     constructor(scene) {
         super(scene);
@@ -12,7 +11,7 @@ export class MyBlade extends CGFobject {
         this.bladeMaterial.setDiffuse(0.8, 0.8, 0.8, 1.0);
         this.bladeMaterial.setSpecular(0.1, 0.1, 0.1, 1.0);
         this.bladeMaterial.setShininess(10.0);
-        this.bladeMaterial.loadTexture("textures/heliport.png"); // Textura específica para as hélices
+        
         //this.bladeMaterial.setTextureWrap('REPEAT', 'REPEAT');
     }
 
