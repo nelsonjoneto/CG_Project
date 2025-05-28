@@ -10,9 +10,12 @@ export class MyWindow extends CGFobject {
         // Window geometry
         this.plane = new MyPlane(scene, 1);
         
-        // Single material with window texture
         this.windowMaterial = new CGFappearance(scene);
         this.windowMaterial.setTexture(texture);
+        this.windowMaterial.setAmbient(0.4, 0.4, 0.4, 1.0);   // Mais visível mesmo sem luz direta
+        this.windowMaterial.setDiffuse(0.8, 0.8, 0.8, 1.0);   // Reflete bem a luz
+        this.windowMaterial.setSpecular(1.0, 1.0, 1.0, 1.0);  // Reflexo especular forte
+        this.windowMaterial.setShininess(100.0);   
         
         // Default window dimensions
         this.width = width;

@@ -79,10 +79,29 @@ export class MyScene extends CGFscene {
   }
 
   initLights() {
-    this.lights[0].setPosition(200, 200, 200, 1);
-    this.lights[0].setDiffuse(1.0, 1.0, 1.0, 1.0);
+    // Luz 0
+    this.lights[0].setPosition(100, 200, 100, 1);
+    this.lights[0].setAmbient(0.1, 0.1, 0.1, 1.0);   // Ambiente
+    this.lights[0].setDiffuse(0.4, 0.4, 0.4, 1.0);   // Difusa (reduzida)
+    this.lights[0].setSpecular(0.1, 0.1, 0.1, 1.0);  // Especular (reduzida)
     this.lights[0].enable();
     this.lights[0].update();
+
+    // Luz 1
+    this.lights[1].setPosition(200, 200, 200, 1);
+    this.lights[1].setAmbient(0.1, 0.1, 0.1, 1.0);
+    this.lights[1].setDiffuse(0.4, 0.4, 0.4, 1.0);
+    this.lights[1].setSpecular(0.1, 0.1, 0.1, 1.0);
+    this.lights[1].enable();
+    this.lights[1].update();
+
+    // Luz 2
+    this.lights[2].setPosition(320, 200, 1000, 1);
+    this.lights[2].setAmbient(0.1, 0.1, 0.1, 1.0);
+    this.lights[2].setDiffuse(0.4, 0.4, 0.4, 1.0);
+    this.lights[2].setSpecular(0.1, 0.1, 0.1, 1.0);
+    this.lights[2].enable();
+    this.lights[2].update();
   }
 
   initCameras() {
