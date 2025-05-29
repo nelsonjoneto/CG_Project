@@ -2,6 +2,7 @@ import { CGFscene, CGFcamera, CGFaxis, CGFtexture} from "../lib/CGF.js";
 import { MyPanorama } from './MyPanorama.js';
 import { MyGround } from "./MyGround.js";
 import { MyBuilding } from "./MyBuilding.js";
+import { MyForest } from "./MyForest.js";
 
 /**
  * MyScene
@@ -54,11 +55,19 @@ export class MyScene extends CGFscene {
       }
     );
 
+    this.forest = new MyForest(this, 18, 18, 200, 200,
+        this.trunkTexture,
+        this.trunkAltTexture,
+        this.leavesTexture,
+        this.pineTexture
+    );
+
     // Display flags
     this.displayAxis = false;
     this.displayPanorama = true;
     this.displayPlane = true;
     this.displayBuilding = true;
+    this.displayForest = true;
   }
 
   initTextures() {
@@ -72,6 +81,12 @@ export class MyScene extends CGFscene {
     this.helipadTexture = new CGFtexture(this, "textures/heliport.png");
     this.wallTexture = new CGFtexture(this, "textures/building_wall.jpg");
     this.roofTexture = new CGFtexture(this, "textures/roof.webp");
+    
+    // Forest textures
+    this.trunkTexture = new CGFtexture(this, "textures/trunk1.jpg");
+    this.trunkAltTexture = new CGFtexture(this, "textures/trunk.jpg");
+    this.leavesTexture = new CGFtexture(this, "textures/crown.png");
+    this.pineTexture = new CGFtexture(this, "textures/crown1.png");
   }
 
   initLights() {
@@ -133,6 +148,22 @@ export class MyScene extends CGFscene {
     );
   }
 
+  isBuildingArea(x, z) {
+      // Building is centered at (0, 0)
+      const totalWidth = this.buildingWidth + 2 * (this.buildingWidth * 0.75); // main + 2 laterals
+      const totalDepth = this.buildingWidth * 0.75;  // Base depth
+
+      const margin = 15; // Extra margin for free space
+
+      const halfWidth = totalWidth / 2 + margin;
+      const halfDepth = totalDepth / 2 + margin;
+
+      return (
+          x >= -halfWidth && x <= halfWidth &&
+          z >= -halfDepth && z <= halfDepth
+      );
+  }
+
   display() {
     // Clear image and depth buffer everytime we update the scene
     this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
@@ -148,5 +179,6 @@ export class MyScene extends CGFscene {
     if (this.displayPlane) this.ground.display();
     if (this.displayAxis) this.axis.display();
     if (this.displayBuilding) this.building.display();
+    if (this.displayForest) this.forest.display();
   }
 }
