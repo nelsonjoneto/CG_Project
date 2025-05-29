@@ -5,10 +5,10 @@
         constructor(scene, textures = {}) {
             super(scene);
             this.textures = textures;
-            const textureRepeat = 100;
+            const textureRepeat = 40;
 
             this.textureRepeat = textureRepeat;
-            this.plane = new MyPlane(scene, textureRepeat, 0, textureRepeat, 0, textureRepeat);
+            this.plane = new MyPlane(scene, 200, 0, textureRepeat, 0, textureRepeat);
             this.maskReady = false;
 
             // Ground material

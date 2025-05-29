@@ -371,7 +371,7 @@ export class MyScene extends CGFscene {
     if (this.displayPanorama) this.panorama.display();
     if (this.displayPlane) this.ground.display();
     if (this.displayAxis) this.axis.display();
-    if (this.displayForest && this.forest) { this.forest.display(); }
+    //if (this.displayForest && this.forest) { this.forest.display(); }
     if (this.fire) this.fire.display();
     this.module.display();
     this.helicopter.display();

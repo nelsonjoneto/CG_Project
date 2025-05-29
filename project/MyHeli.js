@@ -665,11 +665,13 @@ export class MyHelicopter extends CGFobject {
     
     // Add new method to check if over water
     isOverWater() {
-        // Ensure mask is ready before testing
-        if (this.scene && this.scene.ground && this.scene.ground.maskReady) {
-            return this.scene.ground.isLake(this.position.x, this.position.z);
+        if (!this.scene || !this.scene.ground || !this.scene.ground.maskReady) {
+            return false;
         }
-        return false;
+        
+        // Using isNearLake with a radius that matches the helicopter's visual size
+        // Try different values for the radius (5 is a good starting point)
+        return this.scene.ground.isNearLake(this.position.x, this.position.z, 5);
     }
 
     resetPosition() {
