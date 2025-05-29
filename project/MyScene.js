@@ -269,6 +269,17 @@ export class MyScene extends CGFscene {
           // Try to descend - the helicopter will decide if it should go to water or helipad
           this.helicopter.startDescent();
       }
+      
+      // Add water drop control - "O" key
+      if (this.gui.isKeyPressed("KeyO") && !this.waterKeyPressed) {
+          this.helicopter.dropWater();
+          this.waterKeyPressed = true;
+      }
+      
+      // Reset water key flag when released
+      if (!this.gui.isKeyPressed("KeyO")) {
+          this.waterKeyPressed = false;
+      }
     }
     
     // Update camera toggle on 'C' key press

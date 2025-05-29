@@ -76,7 +76,8 @@ export class MyFire extends CGFobject {
         }
     }
 
-    extinguishAtLocation(x, z) {
+    // First method: Find a fire at location and return its cell ID if found
+    findFireAtLocation(x, z, radius = 5) {
         for (const cell of this.cells) {
             if (cell.extinguished || this.extinguishingCells[cell.cellId]) continue;
 
@@ -84,16 +85,40 @@ export class MyFire extends CGFobject {
             const dz = z - cell.baseZ;
             const distSq = dx * dx + dz * dz;
 
-            if (distSq <= 5 * 5) { // within radius 5
-                console.log(`Extinguishing fire at ${cell.cellId}`);
-                this.extinguishingCells[cell.cellId] = {
-                    startTime: Date.now(),
-                    cell
-                };
-                return true;
+            if (distSq <= radius * radius) {
+                return cell.cellId; // Return the cell ID of the found fire
             }
         }
-        return false;
+        return null; // No fire found at this location
+    }
+
+    // Second method: Extinguish a specific fire by its cell ID
+    extinguishFireByID(cellId) {
+        if (!cellId) return false;
+        
+        const cell = this.cells.find(c => c.cellId === cellId);
+        if (!cell || cell.extinguished || this.extinguishingCells[cellId]) {
+            return false;
+        }
+        
+        this.extinguishingCells[cellId] = {
+            startTime: Date.now(),
+            cell
+        };
+        return true;
+    }
+
+    // Keep the original method for backward compatibility, but refactor it
+    extinguishAtLocation(x, z, checkOnly = false, radius = 10) {
+        const cellId = this.findFireAtLocation(x, z, radius);
+        
+        if (!cellId) return false;
+        
+        if (checkOnly) {
+            return true;
+        }
+        
+        return this.extinguishFireByID(cellId);
     }
 
     update(t) {
@@ -139,7 +164,11 @@ export class MyFire extends CGFobject {
                 this.scene.scale(scale, scale, scale);
 
                 const fading = new CGFappearance(this.scene);
-                fading.setEmission(1.0 * scale, 0.6 * scale, 0.0 * scale, 1.0);
+                // FIX: Update alpha (4th component) to fade out completely
+                fading.setEmission(1.0 * scale, 0.6 * scale, 0.0 * scale, scale);
+                // FIX: Set ambient and diffuse to zero to prevent white appearance
+                fading.setAmbient(0, 0, 0, scale);
+                fading.setDiffuse(0, 0, 0, scale);
                 fading.setTexture(this.flameMaterial.texture);
                 fading.apply();
             } else {

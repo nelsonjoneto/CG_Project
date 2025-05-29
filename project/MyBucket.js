@@ -34,7 +34,7 @@ export class MyBucket extends CGFobject {
         this.rimScale = 0.52;
     }
 
-    display(hasWater = false) {
+    display(hasWater = false, openAmount = 0) {
         // Rotate to make bucket upright
         this.scene.pushMatrix();
         this.scene.rotate(-Math.PI/2, 1, 0, 0);
@@ -58,6 +58,19 @@ export class MyBucket extends CGFobject {
         this.innerCylinder.display();
         this.scene.popMatrix();
         
+        // Only draw bottom if bucket isn't fully open
+        if (openAmount < 1.0) {
+            // Draw bottom (partially if opening)
+            this.scene.pushMatrix();
+            // Bottom moves downward as bucket opens
+            this.scene.translate(0, 0, openAmount * 0.3);
+            // Scale down as it opens
+            this.scene.scale(0.45 * (1.0 - openAmount), 0.45 * (1.0 - openAmount), 0.05);
+            this.scene.rotate(Math.PI, 0, 0, 1); // Flip to show bottom
+            this.outerCylinder.display(); // Just use outer cylinder for bottom
+            this.scene.popMatrix();
+        }
+        
         // Draw rim
         this.scene.pushMatrix();
         this.scene.translate(0, 0, this.height);  
@@ -65,7 +78,7 @@ export class MyBucket extends CGFobject {
         this.rimRing.display();
         this.scene.popMatrix();
         
-        // NEW: Draw water if bucket has water
+        // Draw water if bucket has water and isn't fully open
         if (hasWater) {
             this.waterMaterial.apply();
             this.scene.pushMatrix();

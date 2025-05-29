@@ -17,7 +17,8 @@ const HeliState = {
     DESCENDING: 'descending',
     AUTO_RETURNING: 'auto_returning',
     DESCENDING_TO_WATER: 'descending_to_water', // NEW: Descending to collect water
-    ASCENDING_FROM_WATER: 'ascending_from_water' // NEW: Ascending after collecting water
+    ASCENDING_FROM_WATER: 'ascending_from_water', // NEW: Ascending after collecting water
+    DROPPING_WATER: 'dropping_water' // New state for water drop animation
 };
 
 // New enum for auto-return phases
@@ -104,6 +105,16 @@ export class MyHelicopter extends CGFobject {
         this.hasWater = false; // Bucket is empty initially
         this.waterCollectionHeight = 2; // Height above ground where water is collected
         
+        // Water dropping animation properties
+        this.waterDropAnimation = {
+            active: false,
+            progress: 0,
+            duration: 2.0, // Animation lasts 2 seconds
+            waterY: 0,     // Current Y position of falling water
+            waterScale: 1, // Current horizontal scale of water
+            bucketOpen: 0  // 0-1 animation value for bucket opening
+        };
+        
         // Create helicopter components
         this.initializeComponents();
     }
@@ -189,6 +200,7 @@ export class MyHelicopter extends CGFobject {
             // NEW: Add water-related states
             case HeliState.DESCENDING_TO_WATER: this.updateDescentToWater(dt); break;
             case HeliState.ASCENDING_FROM_WATER: this.updateAscentFromWater(dt); break;
+            case HeliState.DROPPING_WATER: this.updateWaterDrop(dt); break; // New state handler
         }
         this.updateRotors(dt);
         this.updateTilt();
@@ -532,6 +544,119 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
+    // NEW: Water dropping animation update
+    updateWaterDrop(dt) {
+        // Update animation progress
+        this.waterDropAnimation.progress += dt / this.waterDropAnimation.duration;
+        
+        if (this.waterDropAnimation.progress >= 1.0) {
+            // Animation complete
+            this.waterDropAnimation.active = false;
+            this.hasWater = false;
+            this.state = HeliState.CRUISING;
+            
+            // Extinguish the specific fire we identified at the start
+            if (this.scene && this.scene.fire && this.targetFireId) {
+                this.scene.fire.extinguishFireByID(this.targetFireId);
+                this.targetFireId = null;
+            }
+            
+            return;
+        }
+        
+        // Animation phases:
+        // 1. Bucket opens (0-0.2)
+        // 2. Water falls and expands (0.1-1.0)
+        
+        // Bucket opening animation
+        if (this.waterDropAnimation.progress < 0.2) {
+            this.waterDropAnimation.bucketOpen = this.waterDropAnimation.progress / 0.2;
+        } else {
+            this.waterDropAnimation.bucketOpen = 1.0;
+        }
+        
+        // Water falling animation (starts slightly before bucket fully opens)
+        if (this.waterDropAnimation.progress > 0.1) {
+            const fallProgress = (this.waterDropAnimation.progress - 0.1) / 0.9;
+            
+            // Water position - use ease-in quad for natural falling acceleration
+            const easeInQuad = fallProgress * fallProgress;
+            
+            // Distance from helicopter to ground
+            const groundY = 0.5; // Estimated ground level
+            const maxFallDistance = this.position.y - groundY;
+            this.waterDropAnimation.waterY = easeInQuad * maxFallDistance;
+            
+            // Water expansion - starts small, then expands as it falls
+            this.waterDropAnimation.waterScale = 1 + (fallProgress * 6); // Now expands to 7x original size
+        }
+    }
+
+    displayWaterDrop(bucketY) {
+        // Calculate the world position of the bucket's bottom in helicopter coordinates
+        // We need to get the helicopter's world matrix to transform this properly
+        
+        // Create water material with transparency
+        const waterMaterial = new CGFappearance(this.scene);
+        waterMaterial.setAmbient(0.1, 0.4, 0.8, 0.8);
+        waterMaterial.setDiffuse(0.2, 0.6, 0.9, 0.8);
+        waterMaterial.setSpecular(0.5, 0.8, 1.0, 0.8);
+        waterMaterial.setShininess(120);
+        
+        // Save the current matrix (helicopter's coordinate system)
+        this.scene.pushMatrix();
+        
+        // Get the absolute world position where water starts falling
+        // This gives us the bucket position in world space
+        let bucketWorldX = 0;
+        let bucketWorldY = bucketY;
+        let bucketWorldZ = 0;
+        
+        // Convert from helicopter's local coordinates to world coordinates
+        // Use the helicopter's position but ignore rotation for gravity
+        bucketWorldX = this.position.x;
+        bucketWorldY = this.position.y + bucketY;
+        bucketWorldZ = this.position.z;
+        
+        // Revert to world coordinates (pop the helicopter's matrix)
+        this.scene.popMatrix();
+        
+        // Start a fresh matrix stack in world coordinates 
+        this.scene.pushMatrix();
+        
+        // Position the water at the bucket's world position
+        this.scene.translate(bucketWorldZ, bucketWorldY - this.waterDropAnimation.waterY, bucketWorldX);
+        
+        // Rotate cylinder to be vertical (in world space)
+        this.scene.rotate(Math.PI/2, 1, 0, 0);
+        
+        // Water gets wider as it falls, but shorter in height
+        const widthScale = this.waterDropAnimation.waterScale;
+        const heightScale = Math.max(0.05, 0.3 - this.waterDropAnimation.progress * 0.2);
+        
+        this.scene.scale(widthScale, widthScale, heightScale);
+        
+    
+        // Apply water material and display
+        waterMaterial.apply();
+        this.bucket.waterCylinder.display();
+        
+        this.scene.popMatrix();
+    }
+
+    // Fix isOverFire method
+    isOverFire() {
+        if (this.scene && this.scene.fire) {
+            const fireId = this.scene.fire.findFireAtLocation(
+                this.position.z,
+                this.position.x,
+                1
+            );
+            return fireId !== null;
+        }
+        return false;
+    }
+    
     normalizeAngle(angle) {
         while (angle > Math.PI) angle -= 2 * Math.PI;
         while (angle < -Math.PI) angle += 2 * Math.PI;
@@ -634,9 +759,60 @@ export class MyHelicopter extends CGFobject {
             this.verticalSpeed = 0.03;
         }
     }
+
+
+    dropWater() {
+        // Only drop water if helicopter has water and is in cruising state
+        if (!this.hasWater || this.state !== HeliState.CRUISING) {
+            return false;
+        }
+        
+        // Find fire at current location and get its ID
+        let targetFireId = null;
+        if (this.scene && this.scene.fire) {
+            targetFireId = this.scene.fire.findFireAtLocation(
+                this.position.z,  // Remember the swapped coordinates
+                this.position.x,
+                5
+            );
+        }
+        
+        if (!targetFireId) {
+            return false; // No fire found
+        }
+        
+        // Store the fire ID to extinguish when animation completes
+        this.targetFireId = targetFireId;
+        
+        this.state = HeliState.DROPPING_WATER;
+        this.waterDropAnimation = {
+            active: true,
+            progress: 0,
+            duration: 2.0,
+            waterY: 0,
+            waterScale: 1,
+            bucketOpen: 0
+        };
+        
+        return true;
+    }
+
+    // Add this helper method to check if over fire
+    isOverFire() {
+        const detectionRadius = 7;
+        
+        if (this.scene && this.scene.fire) {
+            return this.scene.fire.extinguishAtLocation(
+                this.position.z,
+                this.position.x,
+                true,
+                detectionRadius
+            );
+        }
+        return false;
+    }
     
     startDescent() {
-        console.log('Checking water at:', this.position.x, this.position.z, 'Result:', this.isOverWater());
         // If cruising over water and bucket is empty, descend to collect water
         if (this.state === HeliState.CRUISING && this.isOverWater() && !this.hasWater) {
             console.log("Descending to collect water");
@@ -685,7 +861,7 @@ export class MyHelicopter extends CGFobject {
         this.sideTiltAngle = 0;
         this.isBucketDeployed = false;
         this.bucketDeployment = 0;
-        this.hasWater = false; // Reset water state
+        this.hasWater = true; // Reset water state
     }
     
     getPosition() {
@@ -754,9 +930,7 @@ export class MyHelicopter extends CGFobject {
             
             // Calculate positions based on deployment factor
             const ropeLength = this.bucketDeployment * maxRopeLength;
-            
-            // UPDATED: Account for increased bucket size (half height is now 0.2 instead of 0.12)
-            const bucketY = heliBottomY - ropeLength - 0.4; // Changed from -0.24 to -0.4
+            const bucketY = heliBottomY - ropeLength - 0.4;
             
             // Display rope first (if long enough to be visible)
             if (ropeLength > 0.05) {
@@ -769,8 +943,29 @@ export class MyHelicopter extends CGFobject {
             // Display bucket with water state
             this.scene.pushMatrix();
             this.scene.translate(0, bucketY, 0);
-            this.bucket.display(this.hasWater); // Pass water state to bucket
+            
+            // Only show water in bucket if not dropping
+            const showWaterInBucket = this.hasWater && 
+                (!this.waterDropAnimation.active || this.waterDropAnimation.bucketOpen < 0.5);
+            
+            // Pass bucket opening state and display
+            this.bucket.display(showWaterInBucket, this.waterDropAnimation.bucketOpen);
             this.scene.popMatrix();
+            
+            // Display falling water if animation is active
+            if (this.waterDropAnimation.active && this.waterDropAnimation.bucketOpen > 0.1) {
+                // Save the current transformation matrix that includes helicopter's rotations
+                const originalModelViewMatrix = this.scene.getMatrix();
+                
+                // Need to call displayWaterDrop from world coordinates
+                this.scene.popMatrix(); // Pop helicopter's matrix temporarily
+                
+                // Display water in world coordinates
+                this.displayWaterDrop(bucketY);
+                
+                // Restore helicopter's matrix to continue rendering the helicopter
+                this.scene.loadMatrix(originalModelViewMatrix);
+            }
         }
 
         // Skis
