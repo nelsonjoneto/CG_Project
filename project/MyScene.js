@@ -10,6 +10,11 @@ import { MyBuilding } from "./MyBuilding.js";
 export class MyScene extends CGFscene {
   constructor() {
     super();
+    
+    // Building configuration properties
+    this.buildingFloors = 2;
+    this.buildingWindows = 2;
+    this.buildingWidth = 15;
   }
 
   init(application) {
@@ -37,8 +42,8 @@ export class MyScene extends CGFscene {
     this.ground = new MyGround(this, this.grassTexture);
     this.panorama = new MyPanorama(this, this.panoramaTexture);
     
-    // Create the building
-    this.building = new MyBuilding(this, 15, 2, 2, 
+    // Create the building using the configurable properties
+    this.building = new MyBuilding(this, this.buildingWidth, this.buildingFloors, this.buildingWindows, 
       [this.windowTexture, this.windowTexture, this.windowTexture],
       [0.7, 0.7, 0.7, 1.0], 
       {
@@ -113,6 +118,19 @@ export class MyScene extends CGFscene {
     this.setSpecular(0.5, 0.5, 0.5, 1.0);
     this.setEmission(0, 0, 0, 1);
     this.setShininess(10.0);
+  }
+
+  updateBuilding() {
+    this.building = new MyBuilding(this, this.buildingWidth, this.buildingFloors, this.buildingWindows, 
+      [this.windowTexture, this.windowTexture, this.windowTexture],
+      [0.7, 0.7, 0.7, 1.0], 
+      {
+        door: this.doorTexture, 
+        helipad: this.helipadTexture,
+        wall: this.wallTexture,
+        roof: this.roofTexture
+      }
+    );
   }
 
   display() {

@@ -20,6 +20,21 @@ export class MyInterface extends CGFinterface {
         this.gui.add(this.scene, 'displayAxis').name('Display Axis');
         this.gui.add(this.scene, 'displayPlane').name("Display Plane");
         this.gui.add(this.scene, 'displayPanorama').name("Display Panorama");
+        
+        // Folder for building controls
+        const buildingFolder = this.gui.addFolder('Building Configuration');
+        
+        // Controllers for number of floors and windows
+        buildingFolder.add(this.scene, 'buildingFloors', 1, 3, 1)
+          .name('Number of Floors')
+          .onChange(() => this.scene.updateBuilding());
+          
+        buildingFolder.add(this.scene, 'buildingWindows', 1, 4, 1)
+          .name('Windows per Floor')
+          .onChange(() => this.scene.updateBuilding());
+          
+        // Open the folder by default
+        buildingFolder.open();
 
         this.initKeys();
 
