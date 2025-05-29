@@ -1,6 +1,7 @@
 import { CGFscene, CGFcamera, CGFaxis, CGFtexture} from "../lib/CGF.js";
 import { MyPanorama } from './MyPanorama.js';
 import { MyGround } from "./MyGround.js";
+import { MyBuilding } from "./MyBuilding.js";
 
 /**
  * MyScene
@@ -10,6 +11,7 @@ export class MyScene extends CGFscene {
   constructor() {
     super();
   }
+
   init(application) {
     super.init(application);
 
@@ -17,31 +19,54 @@ export class MyScene extends CGFscene {
     this.initLights();
 
     this.gl.clearColor(0, 0, 0, 1.0);
-
     this.gl.clearDepth(100.0);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.enable(this.gl.CULL_FACE);
     this.gl.depthFunc(this.gl.LEQUAL);
+    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
+    this.gl.enable(this.gl.BLEND);
+
 
     this.enableTextures(true);
     this.initTextures();
 
     this.setUpdatePeriod(50);
 
-    //Initialize scene objects
+    // Initialize scene objects
     this.axis = new CGFaxis(this, 20, 1);
     this.ground = new MyGround(this, this.grassTexture);
     this.panorama = new MyPanorama(this, this.panoramaTexture);
+    
+    // Create the building
+    this.building = new MyBuilding(this, 15, 2, 2, 
+      [this.windowTexture, this.windowTexture, this.windowTexture],
+      [0.7, 0.7, 0.7, 1.0], 
+      {
+        door: this.doorTexture, 
+        helipad: this.helipadTexture,
+        wall: this.wallTexture,
+        roof: this.roofTexture
+      }
+    );
 
+    // Display flags
     this.displayAxis = false;
     this.displayPanorama = true;
     this.displayPlane = true;
-
+    this.displayBuilding = true;
   }
 
   initTextures() {
+    // Panorama & ground textures
     this.panoramaTexture = new CGFtexture(this, "textures/panorama.jpg");
     this.grassTexture = new CGFtexture(this, "textures/grass.png");
+    
+    // Building textures
+    this.windowTexture = new CGFtexture(this, "textures/window.jpg");
+    this.doorTexture = new CGFtexture(this, "textures/door.png");
+    this.helipadTexture = new CGFtexture(this, "textures/heliport.png");
+    this.wallTexture = new CGFtexture(this, "textures/building_wall.jpg");
+    this.roofTexture = new CGFtexture(this, "textures/roof.webp");
   }
 
   initLights() {
@@ -50,6 +75,7 @@ export class MyScene extends CGFscene {
     this.lights[0].enable();
     this.lights[0].update();
   }
+  
   initCameras() {
     this.camera = new CGFcamera(
       1,
@@ -85,30 +111,24 @@ export class MyScene extends CGFscene {
     this.setAmbient(0.5, 0.5, 0.5, 1.0);
     this.setDiffuse(0.5, 0.5, 0.5, 1.0);
     this.setSpecular(0.5, 0.5, 0.5, 1.0);
-    this.setEmission(0,0,0,1)
+    this.setEmission(0, 0, 0, 1);
     this.setShininess(10.0);
   }
+
   display() {
-    // ---- BEGIN Background, camera and axis setup
     // Clear image and depth buffer everytime we update the scene
     this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-    // Initialize Model-View matrix as identity (no transformation
+    
+    // Initialize Model-View matrix as identity (no transformation)
     this.updateProjectionMatrix();
     this.loadIdentity();
+    this.applyViewMatrix();
     
-    this.applyViewMatrix(); 
-    
-    
-    if (this.displayPanorama) {
-      this.panorama.display();
-    }
-
-    if (this.displayPlane) {
-        this.ground.display();
-    }
-
+    // Display objects
+    if (this.displayPanorama) this.panorama.display();
+    if (this.displayPlane) this.ground.display();
     if (this.displayAxis) this.axis.display();
-    
+    if (this.displayBuilding) this.building.display();
   }
 }
