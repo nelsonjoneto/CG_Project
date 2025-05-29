@@ -108,17 +108,24 @@ export class MyFire extends CGFobject {
         return true;
     }
 
-    // Keep the original method for backward compatibility, but refactor it
-    extinguishAtLocation(x, z, checkOnly = false, radius = 10) {
-        const cellId = this.findFireAtLocation(x, z, radius);
+    // Add this new method to find all fires in a radius
+    findAllFiresInRadius(x, z, radius = 10) {
+        const foundFireIds = [];
         
-        if (!cellId) return false;
-        
-        if (checkOnly) {
-            return true;
+        for (const cell of this.cells) {
+            // Skip already extinguished fires
+            if (cell.extinguished || this.extinguishingCells[cell.cellId]) continue;
+
+            const dx = x - cell.baseX;
+            const dz = z - cell.baseZ;
+            const distSq = dx * dx + dz * dz;
+
+            if (distSq <= radius * radius) {
+                foundFireIds.push(cell.cellId);
+            }
         }
         
-        return this.extinguishFireByID(cellId);
+        return foundFireIds;
     }
 
     update(t) {

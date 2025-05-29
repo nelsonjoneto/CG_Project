@@ -555,10 +555,15 @@ export class MyHelicopter extends CGFobject {
             this.hasWater = false;
             this.state = HeliState.CRUISING;
             
-            // Extinguish the specific fire we identified at the start
-            if (this.scene && this.scene.fire && this.targetFireId) {
-                this.scene.fire.extinguishFireByID(this.targetFireId);
-                this.targetFireId = null;
+            // Extinguish all the fires we identified at the start
+            if (this.scene && this.scene.fire && this.targetFireIds && this.targetFireIds.length > 0) {
+                // Extinguish each fire in the stored array
+                this.targetFireIds.forEach(fireId => {
+                    this.scene.fire.extinguishFireByID(fireId);
+                });
+                
+                // Clear the array
+                this.targetFireIds = [];
             }
             
             return;
@@ -642,19 +647,6 @@ export class MyHelicopter extends CGFobject {
         this.bucket.waterCylinder.display();
         
         this.scene.popMatrix();
-    }
-
-    // Fix isOverFire method
-    isOverFire() {
-        if (this.scene && this.scene.fire) {
-            const fireId = this.scene.fire.findFireAtLocation(
-                this.position.z,
-                this.position.x,
-                1
-            );
-            return fireId !== null;
-        }
-        return false;
     }
     
     normalizeAngle(angle) {
@@ -767,22 +759,29 @@ export class MyHelicopter extends CGFobject {
             return false;
         }
         
-        // Find fire at current location and get its ID
-        let targetFireId = null;
+        // Find ALL fires within radius and store their IDs
+        const targetFireIds = [];
+        const waterRadius = 10; // Larger area effect for water
+        
         if (this.scene && this.scene.fire) {
-            targetFireId = this.scene.fire.findFireAtLocation(
-                this.position.z,  // Remember the swapped coordinates
+            // Get all fire cell IDs in the target area
+            const affectedFireIds = this.scene.fire.findAllFiresInRadius(
+                this.position.z,
                 this.position.x,
-                5
+                waterRadius
             );
+            
+            if (affectedFireIds && affectedFireIds.length > 0) {
+                targetFireIds.push(...affectedFireIds);
+            }
         }
         
-        if (!targetFireId) {
-            return false; // No fire found
+        if (targetFireIds.length === 0) {
+            return false; // No fires found
         }
         
-        // Store the fire ID to extinguish when animation completes
-        this.targetFireId = targetFireId;
+        // Store the fire IDs to extinguish when animation completes
+        this.targetFireIds = targetFireIds;
         
         this.state = HeliState.DROPPING_WATER;
         this.waterDropAnimation = {
@@ -795,21 +794,6 @@ export class MyHelicopter extends CGFobject {
         };
         
         return true;
-    }
-
-    // Add this helper method to check if over fire
-    isOverFire() {
-        const detectionRadius = 7;
-        
-        if (this.scene && this.scene.fire) {
-            return this.scene.fire.extinguishAtLocation(
-                this.position.z,
-                this.position.x,
-                true,
-                detectionRadius
-            );
-        }
-        return false;
     }
     
     startDescent() {
