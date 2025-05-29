@@ -12,7 +12,7 @@ export class MyPanorama extends CGFobject {
         
         // Configure material properties
         this.material = new CGFappearance(this.scene);
-        this.material.setEmission(1, 1, 1, 1); // Use full emission
+        this.material.setEmission(1, 1, 1, 1);
         this.material.setTexture(texture);
         this.material.setTextureWrap('REPEAT', 'REPEAT');
     }
@@ -20,14 +20,12 @@ export class MyPanorama extends CGFobject {
     display() {
         this.scene.pushMatrix(); 
         
-        // Apply material and texture FIRST
         this.material.apply();
         
         // Follow camera position
         const camPos = this.scene.camera.position;
         this.scene.translate(camPos[0], camPos[1], camPos[2]);
         
-        // Display the sphere after applying material
         this.sphere.display();
         
         this.scene.popMatrix();

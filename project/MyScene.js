@@ -1,10 +1,6 @@
 import { CGFscene, CGFcamera, CGFaxis, CGFtexture} from "../lib/CGF.js";
 import { MyPanorama } from './MyPanorama.js';
 import { MyGround } from "./MyGround.js";
-import { MyBuilding } from "./MyBuilding.js";
-import { MyUnitCube } from "./MyUnitCube.js";
-import { MyTree } from "./MyTree.js";
-import { MyForest } from "./MyForest.js";
 
 /**
  * MyScene
@@ -20,7 +16,6 @@ export class MyScene extends CGFscene {
     this.initCameras();
     this.initLights();
 
-    //Background color
     this.gl.clearColor(0, 0, 0, 1.0);
 
     this.gl.clearDepth(100.0);
@@ -35,14 +30,8 @@ export class MyScene extends CGFscene {
 
     //Initialize scene objects
     this.axis = new CGFaxis(this, 20, 1);
-    this.ground = new MyGround(this);
+    this.ground = new MyGround(this, this.grassTexture);
     this.panorama = new MyPanorama(this, this.panoramaTexture);
-    this.module = new MyBuilding(this,10, 2, 2, 
-      [this.windowTexture, this.windowTexture, this.windowTexture],[0.8, 0.8, 0.8, 1.0]);
-
-    this.cube = new MyUnitCube(this);
-    this.forest = new MyForest(this, 10, 10, 20, 20);
-
 
     this.displayAxis = false;
     this.displayPanorama = true;
@@ -51,8 +40,8 @@ export class MyScene extends CGFscene {
   }
 
   initTextures() {
-    this.panoramaTexture = new CGFtexture(this, "textures/panorama6.jpg");
-    this.windowTexture = new CGFtexture(this, "textures/window.jpg");
+    this.panoramaTexture = new CGFtexture(this, "textures/panorama.jpg");
+    this.grassTexture = new CGFtexture(this, "textures/grass.png");
   }
 
   initLights() {
@@ -108,7 +97,6 @@ export class MyScene extends CGFscene {
     this.updateProjectionMatrix();
     this.loadIdentity();
     
-    // Apply transformations corresponding to the camera position relative to the origin
     this.applyViewMatrix(); 
     
     
@@ -120,11 +108,7 @@ export class MyScene extends CGFscene {
         this.ground.display();
     }
 
-    // Draw axis last
     if (this.displayAxis) this.axis.display();
-    //this.module.display();
-
-    this.forest.display()
     
   }
 }
