@@ -21,6 +21,13 @@ export class MyInterface extends CGFinterface {
         this.gui.add(this.scene, 'displayPlane').name("Display Plane");
         this.gui.add(this.scene, 'displayPanorama').name("Display Panorama");
         
+        // Add speedFactor slider
+        this.gui.add(this.scene, 'speedFactor', 0.1, 3.0, 0.1)
+            .name('Speed Factor')
+            .onChange((val) => {
+                this.scene.speedFactor = val;
+            });
+        
         // Folder for building controls
         const buildingFolder = this.gui.addFolder('Building Configuration');
         
@@ -66,5 +73,4 @@ export class MyInterface extends CGFinterface {
         // returns true if a key is marked as pressed, false otherwise
         return this.activeKeys[keyCode] || false;
     }
-
 }
