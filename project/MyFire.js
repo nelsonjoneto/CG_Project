@@ -1,4 +1,4 @@
-import { CGFobject, CGFappearance } from '../lib/CGF.js';
+import { CGFobject, CGFshader, CGFappearance } from '../lib/CGF.js';
 import { MyTriangle } from './MyTriangle.js';
 
 export class MyFire extends CGFobject {
@@ -8,13 +8,21 @@ export class MyFire extends CGFobject {
         this.triangles = [];
         this.extinguishingCells = {};
         this.cells = [];
-        this.accumulatedTime = 0;
 
-        // Setup material for flames
+        // Setup material
         this.flameMaterial = new CGFappearance(this.scene);
         this.flameMaterial.setEmission(1.0, 0.6, 0.0, 1.0);
         this.flameMaterial.setTexture(flameTexture);
 
+        // Shader
+        this.flameShader = new CGFshader(
+            this.scene.gl,
+            "shaders/flame.vert",
+            "shaders/flame.frag"
+        );
+        this.flameShader.setUniformsValues({
+            timeFactor: 0
+        });
 
         this.initTrianglesFromTrees(treePositions, numFires);
     }
@@ -41,7 +49,7 @@ export class MyFire extends CGFobject {
             };
             this.cells.push(cell);
 
-            const numFlames = 4 + Math.floor(Math.random() * 3); // 4-6 flames per fire
+            const numFlames = 4 + Math.floor(Math.random() * 3); // 4-6
             for (let k = 0; k < numFlames; k++) {
                 const width = 6 + Math.random() * 3.75;
                 const height = 11.25 + Math.random() * 7.5;
@@ -55,7 +63,11 @@ export class MyFire extends CGFobject {
                         z: baseZ + (Math.random() - 0.5) * 1.5
                     },
                     rotationY,
-                    animationOffset: Math.random() * Math.PI * 2,
+                    flameOffset: Math.random() * Math.PI * 2,
+                    xFrequency: 0.7 + Math.random() * 0.6,
+                    yFrequency: 0.5 + Math.random() * 0.4,
+                    zFrequency: 0.6 + Math.random() * 0.5,
+                    moveScale: 0.8 + Math.random() * 0.4,
                     cellId
                 };
                 this.triangles.push(flame);
@@ -64,7 +76,7 @@ export class MyFire extends CGFobject {
         }
     }
 
-    // Find a fire at location and return its cell ID if found
+    // First method: Find a fire at location and return its cell ID if found
     findFireAtLocation(x, z, radius = 5) {
         for (const cell of this.cells) {
             if (cell.extinguished || this.extinguishingCells[cell.cellId]) continue;
@@ -74,13 +86,13 @@ export class MyFire extends CGFobject {
             const distSq = dx * dx + dz * dz;
 
             if (distSq <= radius * radius) {
-                return cell.cellId;
+                return cell.cellId; // Return the cell ID of the found fire
             }
         }
-        return null;
+        return null; // No fire found at this location
     }
 
-    // Extinguish a specific fire by its cell ID
+    // Second method: Extinguish a specific fire by its cell ID
     extinguishFireByID(cellId) {
         if (!cellId) return false;
         
@@ -96,11 +108,12 @@ export class MyFire extends CGFobject {
         return true;
     }
 
-    // Find all fires in a radius
+    // Add this new method to find all fires in a radius
     findAllFiresInRadius(x, z, radius = 10) {
         const foundFireIds = [];
         
         for (const cell of this.cells) {
+            // Skip already extinguished fires
             if (cell.extinguished || this.extinguishingCells[cell.cellId]) continue;
 
             const dx = x - cell.baseX;
@@ -116,16 +129,16 @@ export class MyFire extends CGFobject {
     }
 
     update(t) {
-        // Basic animation timing
-        this.accumulatedTime += t / 1000;
-        
-        // Check extinguishing progress
+        if (!this.accumulatedTime) this.accumulatedTime = 0;
+        this.accumulatedTime += t / 800;
+        this.flameShader.setUniformsValues({ timeFactor: this.accumulatedTime });
+
         const now = Date.now();
         const toRemove = [];
 
         for (const cellId in this.extinguishingCells) {
             const info = this.extinguishingCells[cellId];
-            const elapsed = (now - info.startTime) / 2000; // 2 seconds to extinguish
+            const elapsed = (now - info.startTime) / 2000;
             info.cell.extinguishProgress = Math.min(1.0, elapsed);
 
             if (info.cell.extinguishProgress >= 1.0) {
@@ -141,41 +154,47 @@ export class MyFire extends CGFobject {
 
     display() {
         this.scene.pushMatrix();
-        
+        const currentShader = this.scene.activeShader;
+        this.scene.setActiveShader(this.flameShader);
+
         for (const flame of this.triangles) {
             const cell = this.cells.find(c => c.cellId === flame.cellId);
             if (cell && cell.extinguished) continue;
 
             this.scene.pushMatrix();
-            
-            // Position the flame (no animation)
             this.scene.translate(flame.position.x, 0, flame.position.z);
-            this.scene.rotate(flame.rotationY, 0, 1, 0); // Only the base rotation, no sway
-            
-            // Scale down if being extinguished
+            this.scene.rotate(flame.rotationY, 0, 1, 0);
+
             let scale = 1.0;
             if (this.extinguishingCells[flame.cellId]) {
                 scale = 1.0 - cell.extinguishProgress;
                 this.scene.scale(scale, scale, scale);
-                
-                // Fade the material as fire is extinguished
+
                 const fading = new CGFappearance(this.scene);
-                fading.setAmbient(0.3 * scale, 0.1 * scale, 0.05 * scale, scale);
-                fading.setDiffuse(0.8 * scale, 0.4 * scale, 0.1 * scale, scale);
-                fading.setEmission(0.7 * scale, 0.3 * scale, 0.0 * scale, scale);
-                fading.setSpecular(0.9 * scale, 0.6 * scale, 0.2 * scale, scale);
+                // FIX: Update alpha (4th component) to fade out completely
+                fading.setEmission(1.0 * scale, 0.6 * scale, 0.0 * scale, scale);
+                // FIX: Set ambient and diffuse to zero to prevent white appearance
+                fading.setAmbient(0, 0, 0, scale);
+                fading.setDiffuse(0, 0, 0, scale);
                 fading.setTexture(this.flameMaterial.texture);
                 fading.apply();
             } else {
                 this.flameMaterial.apply();
             }
 
-            // Display the triangle
+            this.flameShader.setUniformsValues({
+                flameOffset: flame.flameOffset,
+                xFrequency: flame.xFrequency,
+                yFrequency: flame.yFrequency,
+                zFrequency: flame.zFrequency,
+                moveScale: flame.moveScale
+            });
+
             flame.triangle.display();
-            
             this.scene.popMatrix();
         }
-        
+
+        this.scene.setActiveShader(currentShader);
         this.scene.popMatrix();
     }
 }
