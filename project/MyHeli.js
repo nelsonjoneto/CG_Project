@@ -35,14 +35,13 @@ export class MyHelicopter extends CGFobject {
         if (initialPosition) {
             this.position = { 
                 x: initialPosition.x || 0, 
-                y: initialPosition.y + 0.8 || 0.8, // Add 0.8 for height above helipad
+                y: initialPosition.y + 0.8 || 0.8, 
                 z: initialPosition.z || 0 
             };
         } else {
             this.position = { x: 0, y: 0.8, z: 0 };
         }
         
-        // Store original position for reset
         this.initialPosition = { ...this.position };
         
         // Initialize helicopter state
@@ -646,14 +645,37 @@ export class MyHelicopter extends CGFobject {
         this.scene.translate(-2.5, 0.3, 0.04);
         this.scene.rotate(this.tailRotorAngle, 0, 0, 1);
         
+        // Add the tail rotor hub before the blades
+        this.scene.pushMatrix();
+        this.scene.translate(0, 0, -0.09);
+        //this.scene.rotate(Math.PI/2, 1, 0, 0); // Orient cylinder properly
+        this.scene.scale(0.17, 0.17, 0.1);
+        this.tailRotor.display();
+        this.scene.popMatrix();
+        
         // Draw tail rotor blades
         for (let i = 0; i < 4; i++) {
             this.scene.pushMatrix();
+            this.scene.translate(0, 0, -0.04);
             this.scene.rotate(i * Math.PI / 2, 0, 0, 1);
             this.scene.scale(0.2, 0.5, 0.5);
             this.blade.display();
             this.scene.popMatrix();
         }
+        this.scene.popMatrix();
+
+        // Display the vertical fin (uncommented and properly positioned)
+        this.scene.pushMatrix();
+        this.scene.translate(-2.6, 0.12, 0); // Position at the tail tip
+        this.scene.rotate(-Math.PI/2, 0, 1, 0); // Rotate to correct orientation
+        this.verticalFin.display(this.helicopterMaterial); // Uncommented!
+        this.scene.popMatrix();
+
+        // Cilindro vertical sólido no fim da cauda (suporte do rotor traseiro)
+        this.scene.pushMatrix();
+        this.scene.translate(-2.5, 0.12, 0); // fim da cauda
+        this.scene.scale(0.05, 0.2, 0.05);   // pequeno e vertical
+        this.tailConnector.display();
         this.scene.popMatrix();
 
         this.scene.popMatrix();
