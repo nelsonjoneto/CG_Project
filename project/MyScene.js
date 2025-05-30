@@ -81,13 +81,15 @@ export class MyScene extends CGFscene {
     
     this.panorama = new MyPanorama(this, this.textures.panorama);
     
-    // Create the building
+    // Create the building with signaling textures
     this.building = new MyBuilding(this, this.buildingWidth, this.buildingFloors, this.buildingWindows, 
       [this.textures.window, this.textures.window, this.textures.window],
       [0.7, 0.7, 0.7, 1.0], 
       {
         door: this.textures.door, 
         helipad: this.textures.helipad,
+        up: this.textures.up,      // Add these two textures
+        down: this.textures.down,  // for heliport signaling
         wall: this.textures.wall,
         roof: this.textures.roof
       }
@@ -134,7 +136,11 @@ export class MyScene extends CGFscene {
       pine: new CGFtexture(this, "textures/crown1.png"),
 
       // Fire texture
-      flame: new CGFtexture(this, "textures/flame_texture.webp")
+      flame: new CGFtexture(this, "textures/flame_texture.webp"),
+
+      // Add UP and DOWN textures for heliport signaling
+      up: new CGFtexture(this, "textures/up.png"),
+      down: new CGFtexture(this, "textures/down.png")
     };
   }
 
@@ -349,6 +355,11 @@ export class MyScene extends CGFscene {
       this.updateHelicopterCamera();
     }
     
+    // Update building with helicopter state
+    if (this.building && this.helicopter) {
+      this.building.update(t, this.helicopter.state);
+    }
+    
     // Process keyboard input
     this.checkKeys(delta_t);
   }
@@ -366,6 +377,8 @@ export class MyScene extends CGFscene {
         {
           door: this.textures.door, 
           helipad: this.textures.helipad,
+          up: this.textures.up,      // Add these two textures
+          down: this.textures.down,  // for heliport signaling
           wall: this.textures.wall,
           roof: this.textures.roof
         }
