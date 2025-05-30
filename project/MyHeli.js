@@ -295,10 +295,13 @@ export class MyHelicopter extends CGFobject {
     }
     
     updateDescent(dt) {
-        const verticalDeceleration = this.config.verticalAcceleration * dt * 1000 * this.scene.speedFactor;
+        // DOUBLED descent acceleration
+        const verticalDeceleration = this.config.verticalAcceleration * 2.0 * dt * 1000 * this.scene.speedFactor;
+        
+        // INCREASED max descent speed by 50%
         this.verticalSpeed = Math.max(
             this.verticalSpeed - verticalDeceleration,
-            -this.config.maxVerticalSpeed
+            -this.config.maxVerticalSpeed * 1.5
         );
         this.position.y += this.verticalSpeed;
         
@@ -327,8 +330,8 @@ export class MyHelicopter extends CGFobject {
             return;
         }
         
-        // Target reached - start orientation phase
-        if (distance < 0.3) {
+        // RELAXED TARGET THRESHOLD: from 0.3 to 0.4
+        if (distance < 0.4) {
             // Snap exactly to target position
             this.position.x = this.targetPosition.x;
             this.position.z = this.targetPosition.z;
@@ -358,12 +361,13 @@ export class MyHelicopter extends CGFobject {
         }
         
         // Position and tilt updates
-        this.position.x += this.velocity.x;
-        this.position.z += this.velocity.z;
+        // ADD SPEED MULTIPLIER: multiply by 1.5 for faster movement
+        this.position.x += this.velocity.x * 1.5;
+        this.position.z += this.velocity.z * 1.5;
         
         this.tiltAngle = -1.5 * this.speed;
         this.tiltAngle = Math.max(-this.config.maxTiltAngle, 
-                     Math.min(this.config.maxTiltAngle, this.tiltAngle));
+                 Math.min(this.config.maxTiltAngle, this.tiltAngle));
     }
 
     // Helper methods for cleaner code structure
@@ -388,7 +392,8 @@ export class MyHelicopter extends CGFobject {
         } else {
             // Turn in the most efficient direction
             const turnDirection = angleDiff > 0 ? 1 : -1;
-            const turnAmount = Math.min(Math.abs(angleDiff), 0.03 * this.scene.speedFactor);
+            // INCREASE TURN SPEED: from 0.03 to 0.06
+            const turnAmount = Math.min(Math.abs(angleDiff), 0.06 * this.scene.speedFactor);
             this.orientation = this.normalizeAngle(this.orientation + turnDirection * turnAmount);
             this.isTurning = true;
         }
@@ -398,18 +403,19 @@ export class MyHelicopter extends CGFobject {
         this.isTurning = false;
         this.isAccelerating = true;
         
-        // Set speed based on distance
+        // INCREASED SPEEDS: from 0.25/0.15 to 0.4/0.25
         if (distance > 5) {
-            this.speed = 0.25; // Faster when far away
+            this.speed = 0.4; // Faster when far away (was 0.25)
         } else {
-            this.speed = 0.15; // Medium speed when closer
+            this.speed = 0.25; // Medium speed when closer (was 0.15)
         }
         
         // Update velocity
         this.updateVelocityDirection();
         
-        // Switch to approach phase when close
-        if (distance < 2) {
+        // Switch to approach phase sooner
+        // INCREASED THRESHOLD: from 2 to 3
+        if (distance < 3) {
             this.autoReturnPhase = AutoReturnPhase.APPROACHING;
         }
     }
@@ -418,13 +424,14 @@ export class MyHelicopter extends CGFobject {
         this.isTurning = false;
         this.isAccelerating = true;
         
-        // Variable speed based on distance for smooth approach
-        this.speed = Math.min(0.06, distance * 0.12);
+        // INCREASED MULTIPLIERS: from 0.06/0.12 to 0.1/0.2
+        this.speed = Math.min(0.1, distance * 0.2); // Was 0.06/0.12
         this.updateVelocityDirection();
         
-        // Even slower for very close approach
+        // Even for very close approach, still maintain reasonable speed
         if (distance < 0.5) {
-            this.speed = Math.min(0.03, distance * 0.06);
+            // INCREASED: from 0.03/0.06 to 0.05/0.1
+            this.speed = Math.min(0.05, distance * 0.1);
             this.updateVelocityDirection();
         }
     }
@@ -450,7 +457,8 @@ export class MyHelicopter extends CGFobject {
         } else {
             // Turn in the most efficient direction
             const turnDirection = angleDiff > 0 ? 1 : -1;
-            const turnAmount = Math.min(Math.abs(angleDiff), 0.03 * this.scene.speedFactor);
+            // DOUBLED ROTATION SPEED: from 0.03 to 0.06
+            const turnAmount = Math.min(Math.abs(angleDiff), 0.06 * this.scene.speedFactor);
             this.orientation = this.normalizeAngle(this.orientation + turnDirection * turnAmount);
             this.isTurning = true;
         }
