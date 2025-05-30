@@ -257,13 +257,32 @@ export class MyScene extends CGFscene {
         this.helicopter.resetPosition();
       
       // Handle P key (ascent/takeoff)
-      if (this.gui.isKeyPressed("KeyP") && this.helicopter.isLanded) {
-        this.helicopter.startAscent();
+      if (this.gui.isKeyPressed("KeyP")) {
+        // Case 1: On helipad - take off
+        if (this.helicopter.isLanded) {
+          this.helicopter.startAscent();
+        } 
+        // Case 2: At water level with filled bucket - ascend
+        else if (this.helicopter.state === 'descending_to_water' && this.helicopter.hasWater) {
+          this.helicopter.startAscent();
+        }
       }
       
       // Handle L key (descent/landing)
       if (this.gui.isKeyPressed("KeyL") && !this.helicopter.isLanded) {
+        // Try to descend - the helicopter will decide if it should go to water or helipad
         this.helicopter.startDescent();
+      }
+      
+      // Change to O key for water drop (as per assignment)
+      if (this.gui.isKeyPressed("KeyO") && !this.waterKeyPressed) {
+        this.helicopter.dropWater();
+        this.waterKeyPressed = true;
+      }
+      
+      // Reset water key flag when released
+      if (!this.gui.isKeyPressed("KeyO")) {
+        this.waterKeyPressed = false;
       }
     }
     
@@ -316,7 +335,7 @@ export class MyScene extends CGFscene {
     // Only create fire if forest exists
     if (this.forest && !this.fire && this.ground.maskReady) {
       const treePositions = this.forest.trees.map(entry => ({ x: entry.x, z: entry.z }));
-      this.fire = new MyFire(this, treePositions, 100, this.textures.flame);
+      this.fire = new MyFire(this, treePositions, 50, this.textures.flame);
     }
     
     // Update fire if it exists

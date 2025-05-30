@@ -24,7 +24,7 @@ void main() {
     if (mask < 0.5) {
         // Create a continuous, non-repeating wave effect using sin()
         float wave = sin((aTextureCoord.t + timeFactor * 0.01) * 20.0);
-        offset = aVertexNormal * 1.0 * wave;
+        offset = aVertexNormal * 0.3 * wave;
     }
 
     gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition + offset, 1.0);

@@ -69,7 +69,7 @@ export class MyInterface extends CGFinterface {
           .name('Distance')
           .onChange(() => this.scene.updateHelicopterCamera());
         
-        cameraFolder.add(this.scene, 'heliCamHeight', 2, 20)
+        cameraFolder.add(this.scene, 'heliCamHeight', -10, 20)
           .name('Height')
           .onChange(() => this.scene.updateHelicopterCamera());
         
