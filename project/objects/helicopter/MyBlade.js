@@ -1,19 +1,27 @@
-import { CGFobject } from '../lib/CGF.js';
-import { CGFappearance } from '../lib/CGF.js';
+import { CGFobject, CGFappearance } from '../../../lib/CGF.js';
+
+/**
+ * MyBlade
+ * @constructor
+ * @param scene - Reference to MyScene object
+ */
 export class MyBlade extends CGFobject {
     constructor(scene) {
         super(scene);
         this.initBuffers();
 
-        
+        // Create material for the blade
         this.bladeMaterial = new CGFappearance(scene);
         this.bladeMaterial.setAmbient(0.3, 0.3, 0.3, 1.0);
         this.bladeMaterial.setDiffuse(0.8, 0.8, 0.8, 1.0);
         this.bladeMaterial.setSpecular(0.1, 0.1, 0.1, 1.0);
         this.bladeMaterial.setShininess(10.0);
-        
     }
 
+    /**
+     * Initialize vertex buffers for the helicopter blade
+     * Creates a slightly twisted blade shape with six faces
+     */
     initBuffers() {
         const thickness = 0.05;
     
@@ -111,9 +119,14 @@ export class MyBlade extends CGFobject {
         this.primitiveType = this.scene.gl.TRIANGLES;
         this.initGLBuffers();
     }
-        display() {
+
+    /**
+     * Display the blade with its material
+     * Applies the blade material before rendering
+     */
+    display() {
         this.scene.pushMatrix();
-        this.bladeMaterial.apply(); // Aplica o material da lâmina
+        this.bladeMaterial.apply();
         super.display();
         this.scene.popMatrix();
     }

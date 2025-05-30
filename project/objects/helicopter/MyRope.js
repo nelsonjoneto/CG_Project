@@ -1,6 +1,13 @@
-import { CGFobject, CGFappearance } from '../lib/CGF.js';
-import { MyCylinder } from './MyCylinder.js';
+import { CGFobject, CGFappearance } from '../../../lib/CGF.js';
+import { MyCylinder } from '../../geometry/MyCylinder.js';
 
+/**
+ * MyRope - Creates a rope system for the helicopter bucket
+ * @constructor
+ * @param scene      - Reference to MyScene object
+ * @param slices     - Number of divisions around rope circumference (default: 8)
+ * @param connections- Number of branch connections to bucket rim (default: 4)
+ */
 export class MyRope extends CGFobject {
     constructor(scene, slices = 8, connections = 4) {
         super(scene);
@@ -26,15 +33,16 @@ export class MyRope extends CGFobject {
     }
     
     /**
-     * Display the rope with branches
-     * @param {number} mainLength - Length of main vertical rope
+     * Display the rope with branches connecting to bucket
+     * Creates a main vertical segment with branching connections to the bucket rim
+     * @param {number} mainLength - Length of main vertical rope segment
      */
     display(mainLength) {
         this.ropeMaterial.apply();
         
         // Constants for rope geometry
         const branchOffset = 0.5;       // Fixed distance from main rope end to bucket top
-        const bucketRimRadius = 0.26;   // UPDATED: Radius of bucket rim (0.5 * 0.52)
+        const bucketRimRadius = 0.26;   // Radius of bucket rim (0.5 * 0.52)
         
         // Calculate actual vertical rope length and end position
         const verticalRopeLength = Math.max(0, mainLength - branchOffset);

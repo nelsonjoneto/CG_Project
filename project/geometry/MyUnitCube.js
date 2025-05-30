@@ -1,5 +1,12 @@
-import { CGFobject } from '../lib/CGF.js';
+import { CGFobject } from '../../lib/CGF.js';
 
+/**
+ * MyUnitCube
+ * @constructor
+ * @param scene        - Reference to MyScene object
+ * @param moduleNumber - Identifier for the module/building (default: 0)
+ * @param options      - Configuration options (e.g. includeTop: false to omit top face)
+ */
 export class MyUnitCube extends CGFobject {
     constructor(scene, moduleNumber = 0, options = {}) {
         super(scene);
@@ -8,6 +15,11 @@ export class MyUnitCube extends CGFobject {
         this.initBuffers();
     }
 
+    /**
+     * Initialize vertex buffers for the unit cube
+     * Creates vertices, normals, texture coordinates, and indices for all faces
+     * Supports both outward and inward facing normals
+     */
     initBuffers() {
         // Vertices for a unit cube centered at (0,0,0)
         this.vertices = [
@@ -101,14 +113,14 @@ export class MyUnitCube extends CGFobject {
             20,21,22, 21,23,22
         );
 
-        // Guarda cópias dos arrays originais
+        // Save copies of original arrays
         const origVerts = this.vertices.slice();
         const origNorms = this.normals.slice();
         const origTex = this.texCoords.slice();
         const origInds = this.indices.slice();
         const nVerts = origVerts.length / 3;
 
-        // Duplica para faces para dentro
+        // Duplicate geometry to create inward-facing faces
         for (let i = 0; i < nVerts; i++) {
             this.vertices.push(origVerts[i * 3], origVerts[i * 3 + 1], origVerts[i * 3 + 2]);
             this.normals.push(-origNorms[i * 3], -origNorms[i * 3 + 1], -origNorms[i * 3 + 2]);

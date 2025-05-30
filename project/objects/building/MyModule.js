@@ -1,9 +1,23 @@
-import { CGFobject, CGFappearance } from '../lib/CGF.js';
-import { MyUnitCube } from './MyUnitCube.js';
+import { CGFobject, CGFappearance } from '../../../lib/CGF.js';
+import { MyUnitCube } from '../../geometry/MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
-import { MyPlane } from './MyPlane.js';
+import { MyPlane } from '../../geometry/MyPlane.js';
 import { MyRoofBorder } from './MyRoofBorder.js';
 
+/**
+ * MyModule - Standard building module
+ * @constructor
+ * @param scene          - Reference to MyScene object
+ * @param width          - Width of the building module
+ * @param numFloors      - Number of floors in the module
+ * @param windowsPerFloor- Number of windows per floor
+ * @param windowSize     - Size of each window
+ * @param color          - RGBA color array for the building walls
+ * @param windowTexture  - Texture for windows
+ * @param buildingNumber - Identifier for this module (determines border placement)
+ * @param wallTexture    - Optional texture for walls
+ * @param roofTexture    - Optional texture for roof
+ */
 export class MyModule extends CGFobject {
     constructor(scene, width, numFloors, windowsPerFloor, windowSize, color, windowTexture, buildingNumber, wallTexture = null, roofTexture = null) {
         super(scene);
@@ -48,6 +62,12 @@ export class MyModule extends CGFobject {
         this.roofBorder = new MyRoofBorder(this.scene, 1, 1, 1);
     }
 
+    /**
+     * Initialize window positions for the module
+     * Calculates evenly distributed positions for windows on each floor
+     * @param windowsPerFloor - Number of windows per floor
+     * @param windowSize      - Size of each window
+     */
     initWindowPositions(windowsPerFloor, windowSize) {
         this.windowPositions = [];
         const totalWindowWidth = windowsPerFloor * windowSize;
@@ -66,7 +86,10 @@ export class MyModule extends CGFobject {
         }
     }
 
-
+    /**
+     * Display the main building structure and roof
+     * Renders the walls and roof with applied textures
+     */
     displayStructure() {
         this.scene.pushMatrix();
         this.scene.scale(this.width, this.totalHeight, this.depth);
@@ -90,25 +113,30 @@ export class MyModule extends CGFobject {
             this.scene.popMatrix();
         }
     }
+
+    /**
+     * Display the border around the roof
+     * Creates border segments based on the building's number (position)
+     */
     displayRoofBorder() {
         const y = this.totalHeight + this.borderHeight / 2 - this.borderHeight;
         const halfW = this.width / 2;
         const halfD = this.depth / 2;
         const t = this.borderThickness;
 
-        // Decide que bordas desenhar consoante o número do módulo
+        // Decide which borders to draw based on module number
         let segments = [
-            // Frente
+            // Front
             { tx: 0, ty: 0, tz: halfD - t / 2, sx: this.width + 2 * t - 1, sy: this.borderHeight + 0.3, sz: t },
-            // Trás
+            // Back
             { tx: 0, ty: 0, tz: -halfD + t / 2, sx: this.width + 2 * t - 1, sy: this.borderHeight + 0.3, sz: t }
         ];
 
-        if (this.buildingNumber === 1) { // Esquerdo
-            // Esquerda
+        if (this.buildingNumber === 1) { // Left module
+            // Left side
             segments.push({ tx: -halfW - t / 2, ty: 0, tz: 0, sx: t, sy: this.borderHeight + 0.3, sz: this.depth + 2 * t - 1 });
-        } else if (this.buildingNumber === 2) { // Direito
-            // Direita
+        } else if (this.buildingNumber === 2) { // Right module
+            // Right side
             segments.push({ tx: halfW + t / 2, ty: 0, tz: 0, sx: t, sy: this.borderHeight + 0.3, sz: this.depth + 2 * t - 1 });
         }
 
@@ -122,7 +150,10 @@ export class MyModule extends CGFobject {
         }
     }
 
-    
+    /**
+     * Display the complete module
+     * Handles rendering of all components in the correct order
+     */
     display() {
         this.scene.pushMatrix();
 
@@ -133,6 +164,10 @@ export class MyModule extends CGFobject {
         this.scene.popMatrix();
     }
 
+    /**
+     * Display all windows for the module
+     * Places windows according to the calculated positions
+     */
     displayWindows() {
         for (const pos of this.windowPositions) {
             this.scene.pushMatrix();

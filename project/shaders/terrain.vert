@@ -14,7 +14,7 @@ varying vec2 vNormalizedCoord;
 void main() {
     vTextureCoord = aTextureCoord;
 
-    // Normalize texture coordinates for the lake mask
+    // Convert repeating texture coordinates to 0-1 range for mask sampling
     vNormalizedCoord = aTextureCoord / textureRepeat;
 
     // Sample lake mask to determine where the wave effect applies
@@ -22,10 +22,12 @@ void main() {
 
     vec3 offset = vec3(0.0);
     if (mask < 0.5) {
-        // Create a continuous, non-repeating wave effect using sin()
+        // Apply vertical wave displacement only to water areas (mask < 0.5)
+        // Wave height varies with sin function for smooth animation
         float wave = sin((aTextureCoord.t + timeFactor * 0.01) * 20.0);
         offset = aVertexNormal * 0.3 * wave;
     }
 
+    // Apply vertex displacement to final position
     gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition + offset, 1.0);
 }

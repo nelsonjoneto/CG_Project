@@ -1,62 +1,72 @@
+/**
+ * MyInterface - Handles GUI and keyboard input for scene interaction
+ * Provides control panels for all adjustable simulation parameters
+ */
 import { CGFinterface, dat } from '../lib/CGF.js';
 
 /**
 * MyInterface
 * @constructor
+* Creates the interface handler
 */
 export class MyInterface extends CGFinterface {
     constructor() {
         super();
     }
 
+    /**
+     * Initialize the interface with controls and input handlers
+     * Sets up all GUI panels and keyboard event listeners
+     * @param application - The application context
+     */
     init(application) {
-        // call CGFinterface init
+        // Initialize base interface
         super.init(application);
 
-        // init GUI. For more information on the methods, check:
-        // https://github.com/dataarts/dat.gui/blob/master/API.md
+        // Create main GUI controller using dat.GUI library
         this.gui = new dat.GUI();
 
-        // Display options
-        this.gui.add(this.scene, 'displayAxis').name('Display Axis');
-        this.gui.add(this.scene, 'displayPlane').name("Display Plane");
-        this.gui.add(this.scene, 'displayPanorama').name("Display Panorama");
+        // Scene visibility toggles
+        this.gui.add(this.scene, 'displayAxis').name('Display Axis');       // Toggle coordinate axis
+        this.gui.add(this.scene, 'displayPlane').name("Display Plane");     // Toggle ground plane
+        this.gui.add(this.scene, 'displayPanorama').name("Display Panorama"); // Toggle skybox
         
-        // Create Helicopter Movement folder
+        // Helicopter control panel
         const helicopterFolder = this.gui.addFolder('Helicopter Movement');
         
-        // Add speedFactor slider to helicopter folder
+        // Speed factor slider (0.1-3.0) affects overall simulation speed
         helicopterFolder.add(this.scene, 'speedFactor', 0.1, 3.0, 0.1)
             .name('Speed Factor')
             .onChange((val) => {
                 this.scene.speedFactor = val;
             });
             
-        // Open the helicopter folder by default
+        // Open helicopter folder by default for easy access
         helicopterFolder.open();
         
-        // Folder for building controls
+        // Building configuration panel
         const buildingFolder = this.gui.addFolder('Building Configuration');
         
-        // Controllers for number of floors and windows
+        // Controls for building customization
         buildingFolder.add(this.scene, 'buildingFloors', 1, 3, 1)
           .name('Number of Floors')
-          .onChange(() => this.scene.updateBuilding());
+          .onChange(() => this.scene.updateBuilding());  // Trigger building update on change
           
         buildingFolder.add(this.scene, 'buildingWindows', 1, 4, 1)
           .name('Windows per Floor')
-          .onChange(() => this.scene.updateBuilding());
+          .onChange(() => this.scene.updateBuilding());  // Trigger building update on change
           
-        // Open the building folder by default
+        // Open building folder by default
         buildingFolder.open();
 
-        // Camera controls
+        // Camera controls panel
         const cameraFolder = this.gui.addFolder('Camera Settings');
 
-        // Add dropdown to select camera
+        // Camera selection dropdown
         cameraFolder.add(this.scene, 'activeCamera', ['default', 'helicopter'])
           .name('Active Camera')
           .onChange((val) => {
+            // Switch active camera reference based on selection
             if (val === 'default') {
               this.scene.camera = this.scene.defaultCamera;
             } else {
@@ -64,7 +74,7 @@ export class MyInterface extends CGFinterface {
             }
           });
 
-        // Add controls for helicopter camera
+        // Helicopter camera positioning controls
         cameraFolder.add(this.scene, 'heliCamDistance', 5, 30)
           .name('Distance')
           .onChange(() => this.scene.updateHelicopterCamera());
@@ -77,36 +87,57 @@ export class MyInterface extends CGFinterface {
           .name('Angle')
           .onChange(() => this.scene.updateHelicopterCamera());
 
+        // Open camera folder by default
         cameraFolder.open();
 
+        // Set up keyboard handling
         this.initKeys();
 
         return true;
     }
 
+    /**
+     * Initialize keyboard input tracking system
+     * Creates key state tracking data structures
+     */
     initKeys() {
-        // create reference from the scene to the GUI
+        // Store reference to interface in the scene for key access
         this.scene.gui = this;
 
-        // disable the processKeyboard function
+        // Disable default keyboard processor
         this.processKeyboard = function () { };
 
-        // create a named array to store which keys are being pressed
+        // Create state tracking object for active keys
         this.activeKeys = {};
     }
+
+    /**
+     * Handle key press events
+     * Records the pressed key in the active keys tracking object
+     * @param event - Key press event
+     */
     processKeyDown(event) {
-        // called when a key is pressed down
-        // mark it as active in the array
+        // Mark key as active in tracking array
         this.activeKeys[event.code] = true;
     };
 
+    /**
+     * Handle key release events
+     * Removes the released key from active keys tracking
+     * @param event - Key release event
+     */
     processKeyUp(event) {
-        // called when a key is released, mark it as inactive in the array
+        // Mark key as inactive in tracking array
         this.activeKeys[event.code] = false;
     };
 
+    /**
+     * Check if a specific key is currently pressed
+     * @param keyCode - Key code to check
+     * @return {boolean} True if key is currently pressed
+     */
     isKeyPressed(keyCode) {
-        // returns true if a key is marked as pressed, false otherwise
+        // Return key state or false if not found
         return this.activeKeys[keyCode] || false;
     }
 }

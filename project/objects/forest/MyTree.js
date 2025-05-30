@@ -1,24 +1,26 @@
-import { CGFobject } from '../lib/CGF.js';
-import { MyCone } from './MyCone.js';
-import { MyPyramid } from './MyPyramid.js';
-import { CGFappearance } from '../lib/CGF.js';
+import { CGFobject } from '../../../lib/CGF.js';
+import { MyCone } from '../../geometry/MyCone.js';
+import { MyPyramid } from '../../geometry/MyPyramid.js';
+import { CGFappearance } from '../../../lib/CGF.js';
 
 /**
  * MyTree
  * @constructor
- * @param scene - Reference to MyScene object
+ * @param scene         - Reference to MyScene object
  * @param rotationAngle - Tree inclination in degrees
- * @param rotationAxis - Inclination axis ('x' or 'z')
- * @param trunkRadius - Trunk radius (cone base)
- * @param totalHeight - Total tree height
- * @param crownColor - RGB array for crown color (e.g. [0, 0.6, 0])
+ * @param rotationAxis  - Inclination axis ('x' or 'z')
+ * @param trunkRadius   - Trunk radius (cone base)
+ * @param totalHeight   - Total tree height
+ * @param crownColor    - RGB array for crown color (e.g. [0, 0.6, 0])
+ * @param trunkTexture  - Texture to apply to the trunk
+ * @param crownTexture  - Texture to apply to the crown
  */
 export class MyTree extends CGFobject {
     constructor(scene, rotationAngle, rotationAxis, trunkRadius, totalHeight, crownColor, trunkTexture, crownTexture) {
         super(scene);
 
         this.scene = scene;
-        this.rotationAngle = rotationAngle * Math.PI / 180;
+        this.rotationAngle = rotationAngle * Math.PI / 180; // Convert degrees to radians
         this.rotationAxis = rotationAxis.toLowerCase();
         this.trunkRadius = trunkRadius;
         this.totalHeight = totalHeight;
@@ -54,7 +56,7 @@ export class MyTree extends CGFobject {
         // Create pyramid array (base = 3.5 * trunkRadius)
         this.crownPyramids = [];
         const baseWidth = trunkRadius * 3.5;
-        const pyramidFaces = Math.floor(Math.random() * 4) + 4;
+        const pyramidFaces = Math.floor(Math.random() * 4) + 4; // Random between 4-7 faces
         for (let i = 0; i < count; i++) {
             this.crownPyramids.push(
                 new MyPyramid(scene, pyramidFaces, 1, baseWidth, this.pyramidHeight)
@@ -63,17 +65,17 @@ export class MyTree extends CGFobject {
 
         // Set up trunk material with improved wrapping mode
         this.currentTrunkMaterial = new CGFappearance(scene);
-        this.currentTrunkMaterial.setAmbient(0.5, 0.4, 0.3, 1); // Tom médio
+        this.currentTrunkMaterial.setAmbient(0.5, 0.4, 0.3, 1);
         this.currentTrunkMaterial.setDiffuse(0.6, 0.5, 0.4, 1);
         this.currentTrunkMaterial.setSpecular(0.2, 0.2, 0.2, 1);
         this.currentTrunkMaterial.setShininess(10);
         this.currentTrunkMaterial.setTexture(trunkTexture);
         
-        // Fix: Use CLAMP_TO_EDGE for trunk texture to avoid visible seams
+        // Use CLAMP_TO_EDGE for trunk texture to avoid visible seams
         this.currentTrunkMaterial.setTextureWrap('CLAMP_TO_EDGE', 'CLAMP_TO_EDGE');
 
+        // Crown material with texture
         this.crownTexture = crownTexture;
-        // Crown material
         this.crownMaterial = new CGFappearance(scene);
         this.crownMaterial.setAmbient(...crownColor, 1);
         this.crownMaterial.setDiffuse(...crownColor, 1);
@@ -84,10 +86,14 @@ export class MyTree extends CGFobject {
         this._stepY = stepY;
     }
 
+    /**
+     * Display the complete tree with trunk and crown
+     * Applies rotation for tree inclination and burial adjustment
+     */
     display() {
         this.scene.pushMatrix();
         
-        // CALCULATE BURIAL ADJUSTMENT: how much the tree needs to sink based on inclination
+        // Calculate burial adjustment: how much the tree needs to sink based on inclination
         let burialAdjustment = 0;
         if (this.rotationAngle !== 0) {
             // When tree is inclined, the base edge lifts up by approximately radius * sin(angle)
@@ -107,14 +113,14 @@ export class MyTree extends CGFobject {
             this.scene.translate(0, -burialAdjustment, 0);
         }
 
-        // Render trunk
+        // Render trunk with trunk material
         this.currentTrunkMaterial.apply();
         this.trunk.display();
         
         // Apply crown material for all pyramids
         this.crownMaterial.apply();
         
-        // Render crown pyramids
+        // Render crown pyramids with overlap
         let yOffset = this.crownBaseY;
         for (const pyramid of this.crownPyramids) {
             this.scene.pushMatrix();

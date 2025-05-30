@@ -1,5 +1,14 @@
-import { CGFobject } from '../lib/CGF.js';
+import { CGFobject } from '../../lib/CGF.js';
 
+/**
+ * MyRing
+ * @constructor
+ * @param scene       - Reference to MyScene object
+ * @param slices      - Number of divisions around the ring circumference
+ * @param height      - Height/thickness of the ring (default: 0.05)
+ * @param innerRadius - Inner radius of the ring (default: 0.8)
+ * @param outerRadius - Outer radius of the ring (default: 1.0)
+ */
 export class MyRing extends CGFobject {
     constructor(scene, slices, height = 0.05, innerRadius = 0.8, outerRadius = 1.0) {
         super(scene);
@@ -10,6 +19,10 @@ export class MyRing extends CGFobject {
         this.initBuffers();
     }
 
+    /**
+     * Initialize vertex buffers for the ring
+     * Creates vertices, normals, indices, and texture coordinates for all ring faces
+     */
     initBuffers() {
         this.vertices = [];
         this.indices = [];
@@ -42,7 +55,11 @@ export class MyRing extends CGFobject {
         this.initGLBuffers();
     }
 
-    // Create a ring-shaped face (either top or bottom)
+    /**
+     * Creates a ring-shaped face (either top or bottom)
+     * @param zPos      - Z position of the face (0 for bottom, height for top)
+     * @param normalDir - Direction of the normal vector (-1 for bottom, 1 for top)
+     */
     createRingFace(zPos, normalDir) {
         const angleStep = (2 * Math.PI) / this.slices;
         const baseIndex = this.vertices.length / 3;
@@ -61,7 +78,8 @@ export class MyRing extends CGFobject {
             // Inner rim vertex
             this.vertices.push(cos * this.innerRadius, sin * this.innerRadius, zPos);
             this.normals.push(0, 0, normalDir);
-            this.texCoords.push(0.5 + cos*0.5*this.innerRadius/this.outerRadius, 0.5 + sin*0.5*this.innerRadius/this.outerRadius);
+            this.texCoords.push(0.5 + cos*0.5*this.innerRadius/this.outerRadius, 
+                               0.5 + sin*0.5*this.innerRadius/this.outerRadius);
         }
         
         // Create ring triangles
@@ -82,7 +100,11 @@ export class MyRing extends CGFobject {
         }
     }
 
-    // Create cylinder wall (either outer or inner)
+    /**
+     * Creates a cylinder wall (either outer or inner)
+     * @param radius    - Radius of the cylinder wall
+     * @param normalDir - Direction of the normal vector (1 for outer wall, -1 for inner wall)
+     */
     createCylinderWall(radius, normalDir) {
         const angleStep = (2 * Math.PI) / this.slices;
         const baseIndex = this.vertices.length / 3;
