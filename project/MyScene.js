@@ -55,6 +55,10 @@ export class MyScene extends CGFscene {
       minZ: -100,
       maxZ: 100
     };
+
+    // Add camera zoom constraints
+    this.minCameraDistance = 25; 
+    this.maxCameraDistance = 60;  
   }
 
   init(application) {
@@ -187,7 +191,7 @@ export class MyScene extends CGFscene {
       0.1,
       1000,
       vec3.fromValues(50, 50, 50),
-      vec3.fromValues(0, 0, 0)
+      vec3.fromValues(0, 15, 0)
     );
     
     // Create helicopter camera (will be updated to follow helicopter)
@@ -383,7 +387,70 @@ export class MyScene extends CGFscene {
     
     // Process keyboard input
     this.checkKeys(delta_t);
+
+    // Check and enforce camera distance limits
+    this.enforceCameraLimits();
   }
+
+  enforceCameraLimits() {
+  // Only apply to default camera, not helicopter camera
+  if (this.activeCamera !== 'default') return;
+  
+  // Calculate current camera-to-target distance
+  const pos = this.defaultCamera.position;
+  const target = this.defaultCamera.target;
+  
+  const dx = pos[0] - target[0];
+  const dy = pos[1] - target[1];
+  const dz = pos[2] - target[2];
+  
+  const currentDistance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+  
+  // Store old distance for comparison
+  const previousDistance = currentDistance;
+  let positionChanged = false;
+  
+  // If distance exceeds limits, adjust camera position
+  if (currentDistance > this.maxCameraDistance) {
+    // Scale down the position vector to max allowed distance
+    const scale = this.maxCameraDistance / currentDistance;
+    
+    // Calculate new position that maintains direction but limits distance
+    this.defaultCamera.position = [
+      target[0] + dx * scale,
+      target[1] + dy * scale,
+      target[2] + dz * scale
+    ];
+    
+    positionChanged = true;
+  }
+  
+  // Enforce minimum distance
+  else if (currentDistance < this.minCameraDistance) {
+    const scale = this.minCameraDistance / currentDistance;
+    
+    this.defaultCamera.position = [
+      target[0] + dx * scale,
+      target[1] + dy * scale,
+      target[2] + dz * scale
+    ];
+    
+    positionChanged = true;
+  }
+  
+  // NEW: Enforce minimum Y position (prevent camera from going below ground)
+  if (this.defaultCamera.position[1] < 0) {
+    // Adjust Y position to ground level (0)
+    this.defaultCamera.position[1] = 2;
+    positionChanged = true;
+  }
+  
+  // NEW: If position was changed, update the camera's internal state
+  if (positionChanged) {
+    // This is the key fix - force the camera to update its internal matrices
+    this.defaultCamera.orbit(0, 0); // Apply a zero orbit to trigger internal updates
+  }
+}
 
   
   updateBuilding() {
