@@ -295,7 +295,7 @@ export class MyHelicopter extends CGFobject {
     }
     
     updateDescent(dt) {
-        // DOUBLED descent acceleration
+        // DO
         const verticalDeceleration = this.config.verticalAcceleration * 2.0 * dt * 1000 * this.scene.speedFactor;
         
         // INCREASED max descent speed by 50%
@@ -752,14 +752,14 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
-    // NEW: Check if helicopter is over water
+
     isOverWater() {
         if (!this.scene || !this.scene.ground || !this.scene.ground.maskReady) {
             return false;
         }
         
-        // Using isNearLake with a radius that matches the helicopter's visual size
-        return this.scene.ground.isNearLake(this.position.x, this.position.z, 5);
+        // Direct lake check with corrected coordinates
+        return this.scene.ground.isLake(this.position.z, this.position.x);
     }
 
     // UPDATED: Reset position to include water state
