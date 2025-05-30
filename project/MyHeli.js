@@ -540,10 +540,6 @@ export class MyHelicopter extends CGFobject {
             return;
         }
         
-        // Animation phases:
-        // 1. Bucket opens (0-20%)
-        // 2. Water falls while bucket remains open (20-80%)
-        // 3. Bucket closes (80-100%)
         
         // Bucket opening/closing animation
         if (this.waterDropAnimation.progress < 0.2) {
