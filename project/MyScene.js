@@ -1,9 +1,10 @@
-import { CGFscene, CGFcamera, CGFaxis, CGFtexture} from "../lib/CGF.js";
+import { CGFscene, CGFcamera, CGFaxis, CGFtexture } from "../lib/CGF.js";
 import { MyPanorama } from './MyPanorama.js';
 import { MyGround } from "./MyGround.js";
 import { MyBuilding } from "./MyBuilding.js";
 import { MyForest } from "./MyForest.js";
 import { MyHelicopter } from "./MyHeli.js";
+import { MyFire } from "./MyFire.js";
 
 /**
  * MyScene
@@ -42,6 +43,10 @@ export class MyScene extends CGFscene {
     this.displayForest = true;
     this.displayBuilding = true;
     this.displayHelicopter = true;
+    this.displayFire = true;
+
+    // Add timing for shader animation
+    this.accumulatedTime = 0;
   }
 
   init(application) {
@@ -50,6 +55,7 @@ export class MyScene extends CGFscene {
     this.initCameras();
     this.initLights();
 
+    // Set up the WebGL context
     this.gl.clearColor(0, 0, 0, 1.0);
     this.gl.clearDepth(100.0);
     this.gl.enable(this.gl.DEPTH_TEST);
@@ -65,7 +71,14 @@ export class MyScene extends CGFscene {
 
     // Initialize scene objects
     this.axis = new CGFaxis(this, 20, 1);
-    this.ground = new MyGround(this, this.textures.grass);
+    
+    // Updated ground initialization with required textures
+    this.ground = new MyGround(this, {
+      grass: this.textures.grass,
+      water: this.textures.water,
+      mask: this.textures.mask
+    });
+    
     this.panorama = new MyPanorama(this, this.textures.panorama);
     
     // Create the building
@@ -89,13 +102,8 @@ export class MyScene extends CGFscene {
       }
     );
 
-    // Create forest once ground is ready
-    this.forest = new MyForest(this, 18, 18, 200, 200,
-      this.textures.trunk,
-      this.textures.trunkAlt,
-      this.textures.leaves,
-      this.textures.pine
-    );
+    // Create forest - move after ground is ready
+    this.forest = null; // Will be created in update once mask is ready
   }
 
   initTextures() {
@@ -103,6 +111,10 @@ export class MyScene extends CGFscene {
       // Panorama & ground
       panorama: new CGFtexture(this, "textures/panorama.jpg"),
       grass: new CGFtexture(this, "textures/grass.png"),
+      
+      // New ground textures for shader-based ground
+      water: new CGFtexture(this, "textures/waterTex.jpg"),
+      mask: new CGFtexture(this, "textures/mask.png"),
       
       // Helicopter
       heliBody: new CGFtexture(this, "textures/heli_with_doors.png"),
@@ -119,7 +131,10 @@ export class MyScene extends CGFscene {
       trunk: new CGFtexture(this, "textures/trunk1.jpg"),
       trunkAlt: new CGFtexture(this, "textures/trunk.jpg"),
       leaves: new CGFtexture(this, "textures/crown.png"),
-      pine: new CGFtexture(this, "textures/crown1.png")
+      pine: new CGFtexture(this, "textures/crown1.png"),
+
+      // Fire texture
+      flame: new CGFtexture(this, "textures/flame_texture.webp")
     };
   }
 
@@ -268,6 +283,7 @@ export class MyScene extends CGFscene {
     if (!this.lastTime) {
       this.lastTime = t;
       this.elapsedTime = 0;
+      this.accumulatedTime = 0;
     }
     
     // Calculate delta time
@@ -275,11 +291,42 @@ export class MyScene extends CGFscene {
     this.lastTime = t;
     this.elapsedTime += delta_t;
     
+    // Accumulate time for shaders
+    this.accumulatedTime += delta_t;
+    
+    // Update ground shader
+    if (this.ground) {
+        this.ground.groundShader.setUniformsValues({
+            timeFactor: this.accumulatedTime / 100 % 100
+        });
+    }
+    
+    // Make sure mask is ready before creating forest
+    if (!this.forest && this.ground && this.ground.maskReady) {
+        console.log("Creating forest - mask is ready");
+        this.forest = new MyForest(this, 18, 18, 200, 200,
+            this.textures.trunk,
+            this.textures.trunkAlt,
+            this.textures.leaves,
+            this.textures.pine,
+            this.ground
+        );
+    }
+    
+    // Only create fire if forest exists
+    if (this.forest && !this.fire && this.ground.maskReady) {
+      const treePositions = this.forest.trees.map(entry => ({ x: entry.x, z: entry.z }));
+      this.fire = new MyFire(this, treePositions, 100, this.textures.flame);
+    }
+    
+    // Update fire if it exists
+    if (this.fire) {
+      this.fire.update(delta_t);
+    }
+    
     // Update helicopter
     if (this.helicopter) {
       this.helicopter.update(delta_t);
-      
-      // Update helicopter camera if it exists
       this.updateHelicopterCamera();
     }
     
@@ -322,22 +369,20 @@ export class MyScene extends CGFscene {
   }
 
   display() {
-    // Clear image and depth buffer
+    // Clear buffers and set up view
     this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-    
-    // Initialize Model-View matrix as identity
     this.updateProjectionMatrix();
     this.loadIdentity();
     this.applyViewMatrix();
     
-    // Display scene objects
-    if (this.displayPanorama) this.panorama.display();
-    if (this.displayPlane) this.ground.display();
-    if (this.displayAxis) this.axis.display();
-    if (this.displayBuilding) this.building.display();
-    if (this.displayForest) this.forest.display();
-    if (this.displayHelicopter) this.helicopter.display();
+    if (this.displayPanorama && this.panorama) this.panorama.display();
+    if (this.displayPlane && this.ground) this.ground.display();
+    if (this.displayAxis && this.axis) this.axis.display();
+    if (this.displayBuilding && this.building) this.building.display();
+    if (this.displayForest && this.forest) this.forest.display();
+    if (this.displayFire && this.fire) this.fire.display();
+    if (this.displayHelicopter && this.helicopter) this.helicopter.display();
   }
 
 }

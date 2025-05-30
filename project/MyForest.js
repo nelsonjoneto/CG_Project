@@ -11,7 +11,7 @@ import { MyTree } from './MyTree.js';
  * @param areaDepth  - Depth of the forest area
  */
 export class MyForest extends CGFobject {
-    constructor(scene, rows, cols, areaWidth, areaDepth, trunkTexture, trunkAltTexture, leavesTexture, pineTexture) {
+    constructor(scene, rows, cols, areaWidth, areaDepth, trunkTexture, trunkAltTexture, leavesTexture, pineTexture, ground) {
         super(scene);
         this.scene = scene;
         this.rows = rows;
@@ -22,6 +22,7 @@ export class MyForest extends CGFobject {
         this.trunkAltTexture = trunkAltTexture;
         this.leavesTexture = leavesTexture;
         this.pineTexture = pineTexture;
+        this.ground = ground;
         this.trees = [];
         this.initForest();
         
@@ -47,12 +48,13 @@ export class MyForest extends CGFobject {
                 // Randomize tree parameters within defined ranges
                 const rotationAngle = Math.random() * 30 - 15;           // [-15°, +15°]
                 const rotationAxis  = Math.random() < 0.5 ? 'x' : 'z';  
-
+                // Inside the initForest() method
                 const trunkRadius = 0.6 + Math.random() * 1.3;        // [0.4, 1.0]
                 const totalHeight = 12 + Math.random() * 6;            // [6, 12]
                 const greenTone     = 0.4 + Math.random() * 0.4;        // [0.4, 0.8]
                 const crownColor     = [0.05, greenTone, 0.05];          // varying green
 
+                if (this.ground.isLake(posX, posZ) || this.ground.isNearLake(posX, posZ, 20)) continue;
                 if (this.scene.isBuildingArea(posX, posZ)) continue;
 
                 const isPine = Math.random() < 0.3;
@@ -71,6 +73,9 @@ export class MyForest extends CGFobject {
                     crownTexture
                 );
 
+                // Compute base grid position
+                
+
                 this.trees.push({
                     tree,
                     x: centerX + offsetX,
@@ -83,6 +88,7 @@ export class MyForest extends CGFobject {
     
     display() {
         this.scene.pushMatrix();
+        //this.scene.translate(-90, 0, 0);
         for (const entry of this.trees) {
             this.scene.pushMatrix();
             this.scene.translate(entry.x, 0, entry.z);
