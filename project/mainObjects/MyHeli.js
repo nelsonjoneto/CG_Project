@@ -149,8 +149,8 @@ export class MyHelicopter extends CGFobject {
         // Bucket and rope for water transport
         this.bucket = new MyBucket(this.scene);
         this.rope = new MyRope(this.scene);
-        this.waterCone = new MyCone(this.scene, 24, 10, 1, 1); // Inicialização simples
-
+        // Water cone for visualizing water collection
+        this.waterCone = new MyCone(this.scene, 24, 10, 1, 1);
 
         this.helicopterMaterial = new CGFappearance(this.scene);
         this.helicopterMaterial.setAmbient(0.4, 0.4, 0.4, 1.0);
@@ -167,10 +167,10 @@ export class MyHelicopter extends CGFobject {
         if (this.textures.heliGlass) this.glassMaterial.setTexture(this.textures.heliGlass);
 
         this.waterMaterial = new CGFappearance(this.scene);
-        this.waterMaterial.setAmbient(0.5, 0.5, 0.5, 1.0);     // Iluminação ambiente mais forte
-        this.waterMaterial.setDiffuse(0.9, 0.9, 0.9, 1.0);     // Reflete mais luz difusa
-        this.waterMaterial.setSpecular(0.6, 0.6, 0.6, 1.0);    // Reflexo especular mais leve
-        this.waterMaterial.setShininess(10.0);                // Brilho mais suave
+        this.waterMaterial.setAmbient(0.5, 0.5, 0.5, 1.0);
+        this.waterMaterial.setDiffuse(0.9, 0.9, 0.9, 1.0);
+        this.waterMaterial.setSpecular(0.6, 0.6, 0.6, 1.0);
+        this.waterMaterial.setShininess(10.0);             
 
         if (this.textures.water) {
             this.waterMaterial.setTexture(this.textures.water);
@@ -920,45 +920,43 @@ export class MyHelicopter extends CGFobject {
     }
 
     /**
-     * Display water falling animation
+     * Renders the falling water effect during a water drop animation.
      * Creates water stream effect during water drop
      * @param bucketY - Y position of bucket relative to helicopter
      */
     displayWaterDrop(bucketY) {
-    const waterMaterial = this.waterMaterial;
+        const waterMaterial = this.waterMaterial;
 
-    const bucketWorldX = this.position.x;
-    const bucketWorldY = this.position.y + bucketY;
-    const bucketWorldZ = this.position.z;
+        // Calculate the world coordinates of the bucket's mouth
+        const bucketWorldX = this.position.x;
+        const bucketWorldY = this.position.y + bucketY;
+        const bucketWorldZ = this.position.z;
 
-    this.scene.pushMatrix();
+        this.scene.pushMatrix();
 
-    // Topo fixo na boca do balde
-    this.scene.translate(bucketWorldZ, bucketWorldY, bucketWorldX);
+        // Topo fixo na boca do balde
+        this.scene.translate(bucketWorldZ, bucketWorldY, bucketWorldX);
 
-    const progress = this.waterDropAnimation.progress;
+        const progress = this.waterDropAnimation.progress;
 
-    const fallProgress = Math.min(1.0, (progress - 0.2) / 0.7); // 0 → 1
-    const easeInQuad = fallProgress * fallProgress;
+        const fallProgress = Math.min(1.0, (progress - 0.2) / 0.7); // Range: 0 → 1
+        const easeInQuad = fallProgress * fallProgress;
 
-    const groundY = 3;
-    const maxFallDistance = this.position.y - groundY -4;
-    const height = easeInQuad * maxFallDistance;
+        const groundY = 2.7; // Ground level approximation
+        const maxFallDistance = this.position.y - groundY;
+        const height = easeInQuad * maxFallDistance;
 
-    const spreadFactor = 30; // controla quanto aumenta
-    const baseRadius = this.bucket.getRimRadius() * (1 + fallProgress * spreadFactor);
+        const spreadFactor = 30; // controla quanto aumenta
+        const baseRadius = this.bucket.getRimRadius() * (1 + fallProgress * spreadFactor);
 
-    this.scene.scale(baseRadius, height, baseRadius);
-    this.scene.translate(0, -1, 0);
+        this.scene.scale(baseRadius, height, baseRadius);
+        this.scene.translate(0, -1, 0);
 
-    waterMaterial.apply();
-    this.waterCone.display();
+        waterMaterial.apply();
+        this.waterCone.display();
 
-    this.scene.popMatrix();
-}
-
-
-
+        this.scene.popMatrix();
+    }
 
 
     /**

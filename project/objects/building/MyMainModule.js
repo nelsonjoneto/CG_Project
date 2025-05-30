@@ -38,7 +38,6 @@ export class MyMainModule extends CGFobject {
         this.downTexture = textures.down;
         this.wallTexture = textures.wall;
         this.roofTexture = textures.roof;
-        console.log(textures.sign);
         this.sign = textures.sign;
 
         // Animation state properties
