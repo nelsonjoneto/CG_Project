@@ -1,7 +1,13 @@
-import { CGFobject, CGFappearance } from '../lib/CGF.js';
-import { MyBucketCylinder } from './MyBucketCylinder.js';
-import { MySphere } from './MySphere.js';
+import { CGFobject, CGFappearance } from '../../../lib/CGF.js';
+import { MyBucketCylinder } from '../../geometry/MyBucketCylinder.js';
+import { MySphere } from '../../geometry/MySphere.js';
 
+/**
+ * MyHelipadLight
+ * @constructor
+ * @param scene - Reference to MyScene object
+ * @param size  - Base size for scaling the light (default: 1.0)
+ */
 export class MyHelipadLight extends CGFobject {
     constructor(scene, size = 1.0) {
         super(scene);
@@ -46,6 +52,8 @@ export class MyHelipadLight extends CGFobject {
     
     /**
      * Set light emissivity on/off with optional intensity
+     * @param active    - Boolean indicating if the light should be active
+     * @param intensity - Emission intensity when active (default: 1.0)
      */
     setActive(active, intensity = 1.0) {
         this.isActive = active;
@@ -62,6 +70,7 @@ export class MyHelipadLight extends CGFobject {
     
     /**
      * Display the light with its base using exact dimensions
+     * Renders a cylinder base with a sphere on top
      */
     display() {
         // Draw base cylinder

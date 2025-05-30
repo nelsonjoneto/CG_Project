@@ -1,5 +1,14 @@
-import { CGFobject } from '../lib/CGF.js';
+import { CGFobject } from '../../lib/CGF.js';
 
+/**
+ * MyBucketCylinder
+ * @constructor
+ * @param scene     - Reference to MyScene object
+ * @param slices    - Number of divisions around the cylinder circumference
+ * @param stacks    - Number of divisions along the cylinder height
+ * @param hasBottom - Whether to include a bottom cap (default: true)
+ * @param hasTop    - Whether to include a top cap (default: false)
+ */
 export class MyBucketCylinder extends CGFobject {
     constructor(scene, slices, stacks, hasBottom = true, hasTop = false) {
         super(scene);
@@ -10,6 +19,10 @@ export class MyBucketCylinder extends CGFobject {
         this.initBuffers();
     }
 
+    /**
+     * Initialize vertex buffers for the cylinder
+     * Creates the vertices, normals, texture coordinates, and indices
+     */
     initBuffers() {
         this.vertices = [];
         this.indices = [];
@@ -71,7 +84,11 @@ export class MyBucketCylinder extends CGFobject {
         this.initGLBuffers();
     }
 
-    // Helper method to add a solid cap (either top or bottom)
+    /**
+     * Helper method to add a cap to the cylinder (top or bottom)
+     * @param zPos     - Z position of the cap (0 for bottom, 1 for top)
+     * @param normalDir - Direction of the normal vector (-1 for bottom, 1 for top)
+     */
     addCap(zPos, normalDir) {
         const angleStep = (2 * Math.PI) / this.slices;
         const baseIndex = this.vertices.length / 3;

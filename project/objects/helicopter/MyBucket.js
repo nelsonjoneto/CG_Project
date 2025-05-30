@@ -1,7 +1,12 @@
-import { CGFobject, CGFappearance, CGFtexture } from '../lib/CGF.js';
-import { MyBucketCylinder } from './MyBucketCylinder.js';
-import { MyRing } from './MyRing.js';
+import { CGFobject, CGFappearance } from '../../../lib/CGF.js';
+import { MyBucketCylinder } from '../../geometry/MyBucketCylinder.js';
+import { MyRing } from '../../geometry/MyRing.js';
 
+/**
+ * MyBucket
+ * @constructor
+ * @param scene - Reference to MyScene object
+ */
 export class MyBucket extends CGFobject {
     constructor(scene) {
         super(scene);
@@ -39,6 +44,11 @@ export class MyBucket extends CGFobject {
         this.rimScale = 0.52;
     }
 
+    /**
+     * Display the bucket with optional water content and opening animation
+     * @param hasWater   - Boolean indicating if the bucket contains water
+     * @param openAmount - Value from 0 to 1 indicating how open the bucket flap is
+     */
     display(hasWater = false, openAmount = 0) {
         // Rotate to make bucket upright
         this.scene.pushMatrix();
@@ -115,11 +125,18 @@ export class MyBucket extends CGFobject {
         this.scene.popMatrix();
     }
     
-    // Helper methods for accessing bucket dimensions
+    /**
+     * Helper method to get the bucket's rim radius
+     * @return {number} Rim radius in world units
+     */
     getRimRadius() {
         return this.scale * this.rimScale;
     }
     
+    /**
+     * Helper method to get the bucket's height
+     * @return {number} Bucket height in world units
+     */
     getHeight() {
         return this.scale * this.height;
     }

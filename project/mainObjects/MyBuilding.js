@@ -1,7 +1,18 @@
-import { CGFobject } from '../lib/CGF.js';
-import { MyModule } from './MyModule.js';
-import { MyMainModule } from './MyMainModule.js';
+import { CGFobject } from '../../lib/CGF.js';
+import { MyModule } from '../objects/building/MyModule.js';
+import { MyMainModule } from '../objects/building/MyMainModule.js';
 
+/**
+ * MyBuilding - Main building complex with helipad
+ * @constructor
+ * @param scene          - Reference to MyScene object
+ * @param width          - Width of the main central module
+ * @param numFloors      - Number of floors in the side modules (main has numFloors+1)
+ * @param windowsPerFloor- Number of windows per floor for each module
+ * @param windowTextures - Array of three window textures [left, main, right]
+ * @param color          - RGBA color array for building walls
+ * @param textures       - Object containing all required textures (door, helipad, up/down, wall, roof, sign)
+ */
 export class MyBuilding extends CGFobject {
     constructor(scene, width, numFloors, windowsPerFloor, windowTextures, color, textures = {}) {
         super(scene);
@@ -68,7 +79,12 @@ export class MyBuilding extends CGFobject {
         ];
     }
     
-    // Update the building with helicopter state
+    /**
+     * Update the building state based on helicopter state
+     * Controls helipad animations for landing and takeoff sequences
+     * @param t              - Current time in milliseconds
+     * @param helicopterState- Current state of the helicopter
+     */
     update(t, helicopterState) {
         // Determine heliport display state
         let heliportState = null;
@@ -105,10 +121,18 @@ export class MyBuilding extends CGFobject {
         this.modules[1].update(t);
     }
     
+    /**
+     * Get the position of the helipad for helicopter positioning
+     * @return {Object} Position object with x, y, z coordinates
+     */
     getHelipadPosition() {
         return this.modules[1].getHelipadPosition();
     }
 
+    /**
+     * Display the complete building complex
+     * Renders left, main, and right modules at correct positions
+     */
     display() {
         this.scene.pushMatrix();
         

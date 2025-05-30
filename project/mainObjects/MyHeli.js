@@ -1,27 +1,34 @@
-import { CGFobject, CGFappearance } from '../lib/CGF.js';
-import { MyUnitCube } from './MyUnitCube.js';
-import { MyBucketCylinder } from './MyBucketCylinder.js';
-import { MySphere } from './MySphere.js';
-import { MyBlade } from './MyBlade.js';
-import { MyTail } from './MyTail.js';
-import { MyVerticalFin } from './MyVerticalFin.js';
-import { MyBucket } from './MyBucket.js'; 
-import { MyRope } from './MyRope.js'; 
-import { MyCone } from './MyCone.js'; // Import the cone for water drop effect
 
-// Helicopter states as enum
+import { CGFobject, CGFappearance } from '../../lib/CGF.js';
+import { MyUnitCube } from '../geometry/MyUnitCube.js';
+import { MyBucketCylinder } from '../geometry/MyBucketCylinder.js';
+import { MySphere } from '../geometry/MySphere.js';
+import { MyBlade } from '../objects/helicopter/MyBlade.js';
+import { MyTail } from '../objects/helicopter/MyTail.js';
+import { MyVerticalFin } from '../objects/helicopter/MyVerticalFin.js';
+import { MyBucket } from '../objects/helicopter/MyBucket.js'; 
+import { MyRope } from '../objects/helicopter/MyRope.js'; 
+import { MyCone } from '../geometry/MyCone.js';
+/**
+ * Helicopter states as enum
+ * @enum {string}
+ */
+
 const HeliState = {
     LANDED: 'landed',
     ASCENDING: 'ascending',
     CRUISING: 'cruising',
     DESCENDING: 'descending',
     AUTO_RETURNING: 'auto_returning',
-    DESCENDING_TO_WATER: 'descending_to_water', // NEW: Descending to collect water
-    ASCENDING_FROM_WATER: 'ascending_from_water', // NEW: Ascending after collecting water
-    DROPPING_WATER: 'dropping_water' // New state for water drop animation
+    DESCENDING_TO_WATER: 'descending_to_water',
+    ASCENDING_FROM_WATER: 'ascending_from_water',
+    DROPPING_WATER: 'dropping_water'
 };
 
-// Auto-return phases
+/**
+ * Auto-return phases for controlled landing sequence
+ * @enum {string}
+ */
 const AutoReturnPhase = {
     TURNING: 'turning',
     ACCELERATING: 'accelerating', 
@@ -29,6 +36,13 @@ const AutoReturnPhase = {
     ORIENTING: 'orienting'
 };
 
+/**
+ * MyHelicopter - Creates and manages the helicopter with physics and animation
+ * @constructor
+ * @param scene           - Reference to MyScene object
+ * @param initialPosition - Initial helicopter position (default: null for origin)
+ * @param textures        - Object containing required textures (heliBody, heliGlass)
+ */
 export class MyHelicopter extends CGFobject {
     constructor(scene, initialPosition = null, textures = {}) {
         super(scene);
@@ -96,25 +110,28 @@ export class MyHelicopter extends CGFobject {
         // Store initial orientation for reset (typically 0)
         this.initialOrientation = 0;
         
-        // NEW: Water collection properties
-        this.hasWater = false; // Bucket is empty initially
-        this.waterCollectionHeight = 2; // Height above ground where water is collected
+        // Water collection properties
+        this.hasWater = false;
+        this.waterCollectionHeight = 2;
         
-        // NEW: Water dropping animation properties
+        // Water dropping animation properties
         this.waterDropAnimation = {
             active: false,
             progress: 0,
-            duration: 2.0, // Animation lasts 2 seconds
-            waterY: 0,     // Current Y position of falling water
-            waterScale: 1, // Current horizontal scale of water
-            bucketOpen: 0  // 0-1 animation value for bucket opening
+            duration: 2.0,
+            waterY: 0,
+            waterScale: 1,
+            bucketOpen: 0
         };
         
         // Create helicopter components
         this.initializeComponents();
     }
 
-    // Initialize all geometric components
+    /**
+     * Initialize all geometric components of the helicopter
+     * Creates body, tail, rotors, blades, and bucket components
+     */
     initializeComponents() {
         this.body = new MySphere(this.scene, 1, 20, 20);
         this.tail = new MyTail(this.scene);
@@ -129,7 +146,7 @@ export class MyHelicopter extends CGFobject {
         this.skiSupport = new MyUnitCube(this.scene);
         this.verticalFin = new MyVerticalFin(this.scene);
         
-        // Bucket and rope for transport
+        // Bucket and rope for water transport
         this.bucket = new MyBucket(this.scene);
         this.rope = new MyRope(this.scene);
         this.waterCone = new MyCone(this.scene, 24, 10, 1, 1); // Inicialização simples
@@ -161,10 +178,18 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
+    /**
+     * Check if helicopter is currently in landed state
+     * @return {boolean} True if helicopter is landed
+     */
     get isLanded() {
         return this.state === HeliState.LANDED;
     }
 
+    /**
+     * Updates helicopter state and animations
+     * @param delta_t - Time elapsed since last update in milliseconds
+     */
     update(delta_t) {
         const dt = delta_t * 0.001;
         
@@ -208,7 +233,6 @@ export class MyHelicopter extends CGFobject {
             case HeliState.CRUISING:   this.updateCruising(dt); break;
             case HeliState.DESCENDING: this.updateDescent(dt); break;
             case HeliState.AUTO_RETURNING: this.updateAutoReturn(); break;
-            // NEW: Water-related states
             case HeliState.DESCENDING_TO_WATER: this.updateDescentToWater(dt); break;
             case HeliState.ASCENDING_FROM_WATER: this.updateAscentFromWater(dt); break;
             case HeliState.DROPPING_WATER: this.updateWaterDrop(dt); break;
@@ -221,12 +245,23 @@ export class MyHelicopter extends CGFobject {
         this.enforcePositionLimits();
     }
 
-    // Helper method for smooth value transitions
+    /**
+     * Helper method for smooth value transitions
+     * @param current - Current value
+     * @param target  - Target value
+     * @param step    - Maximum change per update
+     * @return {number} Updated value
+     */
     _updateValue(current, target, step) {
         if (Math.abs(target - current) < step) return target;
         return current + Math.sign(target - current) * step;
     }
 
+    /**
+     * Update rotor animations based on helicopter state
+     * Adjusts rotation speeds for main and tail rotors
+     * @param dt - Time delta in seconds
+     */
     updateRotors(dt) {
         if (this.state === HeliState.LANDED) return;
         
@@ -275,6 +310,11 @@ export class MyHelicopter extends CGFobject {
         this.tailRotorAngle = (this.tailRotorAngle + tailRotorSpeed * dt) % (2 * Math.PI);
     }
     
+    /**
+     * Update helicopter position during ascent
+     * Controls vertical speed and transition to cruising
+     * @param dt - Time delta in seconds
+     */
     updateAscent(dt) {
         const verticalAcceleration = 0.002 * dt * 1000 * this.scene.speedFactor;
         this.verticalSpeed = Math.min(
@@ -291,6 +331,11 @@ export class MyHelicopter extends CGFobject {
         }
     }
     
+    /**
+     * Update helicopter position during cruising
+     * Handles deceleration when not accelerating
+     * @param dt - Time delta in seconds
+     */
     updateCruising(dt) {
         if (!this.isAccelerating && Math.abs(this.speed) > 0) {
             const effectiveSpeedFactor = Math.max(0.3, this.scene.speedFactor);
@@ -308,11 +353,14 @@ export class MyHelicopter extends CGFobject {
         this.position.z += this.velocity.z * speedMultiplier;
     }
     
+    /**
+     * Update helicopter position during descent
+     * Controls vertical speed and landing sequence
+     * @param dt - Time delta in seconds
+     */
     updateDescent(dt) {
-        // DO
         const verticalDeceleration = this.config.verticalAcceleration * 2.0 * dt * 1000 * this.scene.speedFactor;
         
-        // INCREASED max descent speed by 50%
         this.verticalSpeed = Math.max(
             this.verticalSpeed - verticalDeceleration,
             -this.config.maxVerticalSpeed * 1.5
@@ -332,6 +380,10 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
+    /**
+     * Update helicopter position during auto-return
+     * Handles multi-phase return to landing pad sequence
+     */
     updateAutoReturn() {
         // Calculate distance to target
         const dx = this.targetPosition.x - this.position.x;
@@ -344,7 +396,6 @@ export class MyHelicopter extends CGFobject {
             return;
         }
         
-        // RELAXED TARGET THRESHOLD: from 0.3 to 0.4
         if (distance < 0.4) {
             // Snap exactly to target position
             this.position.x = this.targetPosition.x;
@@ -375,16 +426,20 @@ export class MyHelicopter extends CGFobject {
         }
         
         // Position and tilt updates
-        // ADD SPEED MULTIPLIER: multiply by 1.5 for faster movement
         this.position.x += this.velocity.x * 1.5;
         this.position.z += this.velocity.z * 1.5;
         
         this.tiltAngle = -1.5 * this.speed;
         this.tiltAngle = Math.max(-this.config.maxTiltAngle, 
-                 Math.min(this.config.maxTiltAngle, this.tiltAngle));
+                         Math.min(this.config.maxTiltAngle, this.tiltAngle));
     }
 
-    // Helper methods for cleaner code structure
+    /**
+     * Handle turning phase of auto-return
+     * Rotates helicopter to face target position
+     * @param dx - X distance to target
+     * @param dz - Z distance to target
+     */
     _handleTurningPhase(dx, dz) {
         // Stop forward movement during turn
         this.speed = 0;
@@ -406,50 +461,59 @@ export class MyHelicopter extends CGFobject {
         } else {
             // Turn in the most efficient direction
             const turnDirection = angleDiff > 0 ? 1 : -1;
-            // INCREASE TURN SPEED: from 0.03 to 0.06
             const turnAmount = Math.min(Math.abs(angleDiff), 0.06 * this.scene.speedFactor);
             this.orientation = this.normalizeAngle(this.orientation + turnDirection * turnAmount);
             this.isTurning = true;
         }
     }
 
+    /**
+     * Handle accelerating phase of auto-return
+     * Adjusts helicopter speed based on distance to target
+     * @param distance - Distance to target position
+     */
     _handleAcceleratingPhase(distance) {
         this.isTurning = false;
         this.isAccelerating = true;
         
-        // INCREASED SPEEDS: from 0.25/0.15 to 0.4/0.25
         if (distance > 5) {
-            this.speed = 0.4; // Faster when far away (was 0.25)
+            this.speed = 0.4; // Faster when far away
         } else {
-            this.speed = 0.25; // Medium speed when closer (was 0.15)
+            this.speed = 0.25; // Medium speed when closer
         }
         
         // Update velocity
         this.updateVelocityDirection();
         
-        // Switch to approach phase sooner
-        // INCREASED THRESHOLD: from 2 to 3
+        // Switch to approach phase when closer
         if (distance < 3) {
             this.autoReturnPhase = AutoReturnPhase.APPROACHING;
         }
     }
 
+    /**
+     * Handle approaching phase of auto-return
+     * Gradually decreases speed as helicopter nears target
+     * @param distance - Distance to target position
+     */
     _handleApproachingPhase(distance) {
         this.isTurning = false;
         this.isAccelerating = true;
         
-        // INCREASED MULTIPLIERS: from 0.06/0.12 to 0.1/0.2
-        this.speed = Math.min(0.1, distance * 0.2); // Was 0.06/0.12
+        this.speed = Math.min(0.1, distance * 0.2);
         this.updateVelocityDirection();
         
         // Even for very close approach, still maintain reasonable speed
         if (distance < 0.5) {
-            // INCREASED: from 0.03/0.06 to 0.05/0.1
             this.speed = Math.min(0.05, distance * 0.1);
             this.updateVelocityDirection();
         }
     }
 
+    /**
+     * Handle orienting phase of auto-return
+     * Rotates helicopter to initial orientation before landing
+     */
     _handleOrientingPhase() {
         // Stop all forward movement
         this.speed = 0;
@@ -471,21 +535,22 @@ export class MyHelicopter extends CGFobject {
         } else {
             // Turn in the most efficient direction
             const turnDirection = angleDiff > 0 ? 1 : -1;
-            // DOUBLED ROTATION SPEED: from 0.03 to 0.06
             const turnAmount = Math.min(Math.abs(angleDiff), 0.06 * this.scene.speedFactor);
             this.orientation = this.normalizeAngle(this.orientation + turnDirection * turnAmount);
             this.isTurning = true;
         }
     }
     
-    // NEW: Update descent to water
+    /**
+     * Update helicopter position during descent to water
+     * Controls vertical speed and water collection
+     * @param dt - Time delta in seconds
+     */
     updateDescentToWater(dt) {
         const waterLevel = this.waterCollectionHeight;
         
-        // INCREASED: Acceleration multiplier from 2.0 to 4.0 for much faster descent
         const verticalAcceleration = this.config.verticalAcceleration * 4.0 * dt * 1000 * this.scene.speedFactor;
         
-        // INCREASED: Maximum descent speed by 50%
         this.verticalSpeed = Math.max(
             this.verticalSpeed - verticalAcceleration,
             -this.config.maxVerticalSpeed * 1.5
@@ -494,9 +559,8 @@ export class MyHelicopter extends CGFobject {
         // Update position
         this.position.y += this.verticalSpeed;
         
-        // Only start braking when very close to water (0.3 units instead of 0.5)
+        // Only start braking when very close to water
         if (this.position.y <= waterLevel + 0.3) {
-            // ADJUSTED: Stronger braking force for quicker stop
             const brakingForce = this.config.verticalAcceleration * 6.0 * dt * 1000;
             this.verticalSpeed = Math.min(this.verticalSpeed + brakingForce, -0.01);
         }
@@ -513,12 +577,14 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
-    // NEW: Update ascent from water
+    /**
+     * Update helicopter position during ascent from water
+     * Controls vertical speed and transition to cruising
+     * @param dt - Time delta in seconds
+     */
     updateAscentFromWater(dt) {
-        // INCREASED: Acceleration value doubled for faster takeoff
         const verticalAcceleration = 0.004 * dt * 1000 * this.scene.speedFactor;
         
-        // INCREASED: Maximum ascent speed by 50%
         this.verticalSpeed = Math.min(
             this.verticalSpeed + verticalAcceleration,
             this.config.maxVerticalSpeed * 1.5
@@ -534,7 +600,11 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
-    // NEW: Water dropping animation update
+    /**
+     * Update water dropping animation
+     * Controls bucket opening, water falling, and fire extinguishing
+     * @param dt - Time delta in seconds
+     */
     updateWaterDrop(dt) {
         // Update animation progress
         this.waterDropAnimation.progress += dt / this.waterDropAnimation.duration;
@@ -593,18 +663,31 @@ export class MyHelicopter extends CGFobject {
         }
     }
     
+    /**
+     * Normalize angle to range [-π, π]
+     * @param angle - Angle in radians
+     * @return {number} Normalized angle
+     */
     normalizeAngle(angle) {
         while (angle > Math.PI) angle -= 2 * Math.PI;
         while (angle < -Math.PI) angle += 2 * Math.PI;
         return angle;
     }
     
+    /**
+     * Update helicopter tilt based on speed
+     * Creates realistic forward tilt during movement
+     */
     updateTilt() {
         this.tiltAngle = -1.5 * this.speed;
         this.tiltAngle = Math.max(-this.config.maxTiltAngle, 
                                Math.min(this.config.maxTiltAngle, this.tiltAngle));
     }
 
+    /**
+     * Update side tilt based on turning rate
+     * Creates realistic banking during turns
+     */
     updateSideTilt() {
         const targetSideTilt = 30 * this.currentTurnRate;
         if (!this.isTurning) {
@@ -631,6 +714,11 @@ export class MyHelicopter extends CGFobject {
                                 Math.min(this.config.maxSideTiltAngle, this.sideTiltAngle));
     }
      
+    /**
+     * Apply turning input from user
+     * Rotates helicopter around Y axis during cruising
+     * @param v - Turn value (-1 to 1)
+     */
     turn(v) {
         // Only allow turning during CRUISING state
         if (this.state !== HeliState.CRUISING) return;
@@ -651,6 +739,11 @@ export class MyHelicopter extends CGFobject {
         this.updateVelocityDirection();
     }
 
+    /**
+     * Apply acceleration input from user
+     * Changes helicopter speed during cruising
+     * @param v - Acceleration value (-1 to 1)
+     */
     accelerate(v) {
         // Only allow acceleration during CRUISING state
         if (this.state !== HeliState.CRUISING) return;
@@ -662,6 +755,10 @@ export class MyHelicopter extends CGFobject {
         this.updateVelocityDirection();
     }
 
+    /**
+     * Set the turning state of the helicopter
+     * @param state - Boolean indicating if turning should be active
+     */
     setTurning(state) {
         // Only allow changing turning state during CRUISING
         if (this.state !== HeliState.CRUISING) return;
@@ -670,6 +767,10 @@ export class MyHelicopter extends CGFobject {
         if (!state) this.lastTurnValue = 0;
     }
 
+    /**
+     * Set the acceleration state of the helicopter
+     * @param state - Boolean indicating if acceleration should be active
+     */
     setForwardAccelerating(state) {
         // Only allow changing acceleration state during CRUISING
         if (this.state !== HeliState.CRUISING) return;
@@ -677,12 +778,19 @@ export class MyHelicopter extends CGFobject {
         this.isAccelerating = state;
     }
     
+    /**
+     * Update velocity based on speed and orientation
+     * Sets X and Z components of velocity vector
+     */
     updateVelocityDirection() {
         this.velocity.x = -Math.sin(this.orientation) * this.speed;
         this.velocity.z = Math.cos(this.orientation) * this.speed;
     }
     
-    // UPDATED: Start ascent handling water collection
+    /**
+     * Start ascent from current position
+     * Controls takeoff and water collection ascent
+     */
     startAscent() {
         // If landed, take off normally
         if (this.state === HeliState.LANDED) {
@@ -696,7 +804,11 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
-    // NEW: Drop water method
+    /**
+     * Drop water from the bucket
+     * Initiates water dropping animation and fire extinguishing
+     * @return {boolean} True if water drop initiated successfully
+     */
     dropWater() {
         // Only drop water if helicopter has water and is in cruising state
         if (!this.hasWater || this.state !== HeliState.CRUISING) {
@@ -740,7 +852,10 @@ export class MyHelicopter extends CGFobject {
         return true;
     }
     
-    // UPDATED: Start descent handling water collection
+    /**
+     * Start descent from current position
+     * Handles water collection or auto-return to helipad
+     */
     startDescent() {
         // If cruising over water and bucket is empty, descend to collect water
         if (this.state === HeliState.CRUISING && this.isOverWater() && !this.hasWater) {
@@ -766,7 +881,10 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
-
+    /**
+     * Check if helicopter is positioned over water
+     * @return {boolean} True if helicopter is over water
+     */
     isOverWater() {
         if (!this.scene || !this.scene.ground || !this.scene.ground.maskReady) {
             return false;
@@ -776,7 +894,10 @@ export class MyHelicopter extends CGFobject {
         return this.scene.ground.isLake(this.position.z, this.position.x);
     }
 
-    // UPDATED: Reset position to include water state
+    /**
+     * Reset helicopter position and state
+     * Returns to initial position on the helipad
+     */
     resetPosition() {
         this.position = { ...this.initialPosition };
         this.orientation = 0;
@@ -790,10 +911,19 @@ export class MyHelicopter extends CGFobject {
         this.hasWater = false; // Reset water state
     }
     
+    /**
+     * Get current helicopter position
+     * @return {Object} Position object with x, y, z coordinates
+     */
     getPosition() {
         return this.position;
     }
 
+    /**
+     * Display water falling animation
+     * Creates water stream effect during water drop
+     * @param bucketY - Y position of bucket relative to helicopter
+     */
     displayWaterDrop(bucketY) {
     const waterMaterial = this.waterMaterial;
 
@@ -831,6 +961,10 @@ export class MyHelicopter extends CGFobject {
 
 
 
+    /**
+     * Display the complete helicopter model
+     * Renders all helicopter components with proper transformations
+     */
     display() {
         // Begin helicopter transformation
         this.scene.pushMatrix();
@@ -923,17 +1057,14 @@ export class MyHelicopter extends CGFobject {
             
             // Display falling water if animation is active and bucket is opened enough
             if (this.waterDropAnimation.active && this.waterDropAnimation.bucketOpen > 0.8) {
-                // Save the current transformation matrix that includes helicopter's rotations
-                const originalModelViewMatrix = this.scene.getMatrix();
-                
-                // Need to call displayWaterDrop from world coordinates
-                this.scene.popMatrix(); // Pop helicopter's matrix temporarily
-                
-                // Display water in world coordinates
+                this.scene.popMatrix(); // sair do helicóptero
                 this.displayWaterDrop(bucketY);
-                
-                // Restore helicopter's matrix to continue rendering the helicopter
-                this.scene.loadMatrix(originalModelViewMatrix);
+                this.scene.pushMatrix(); // voltar ao helicóptero
+                this.scene.translate(this.position.z, this.position.y, this.position.x);
+                this.scene.rotate(this.orientation, 0, 1, 0);
+                this.scene.rotate(this.tiltAngle, 0, 0, 1);
+                this.scene.rotate(this.sideTiltAngle, 1, 0, 0);
+
             }
         }
 
@@ -973,16 +1104,20 @@ export class MyHelicopter extends CGFobject {
         this.verticalFin.display(this.helicopterMaterial);
         this.scene.popMatrix();
 
-        // Cilindro vertical sólido no fim da cauda (suporte do rotor traseiro)
+        // Tail rotor support cylinder
         this.scene.pushMatrix();
-        this.scene.translate(-2.5, 0.12, 0); // fim da cauda
-        this.scene.scale(0.05, 0.2, 0.05);   // pequeno e vertical
+        this.scene.translate(-2.5, 0.12, 0); 
+        this.scene.scale(0.05, 0.2, 0.05);
         this.tailConnector.display();
         this.scene.popMatrix();
 
         this.scene.popMatrix();
     }
     
+    /**
+     * Display the helicopter landing skis
+     * Creates landing gear with supports
+     */
     displaySkis() {
         const skiY = -0.77;
         const skiZ = 0.35;
@@ -1007,21 +1142,23 @@ export class MyHelicopter extends CGFobject {
         }
     }
 
-    // Add this method to the MyHelicopter class
+    /**
+     * Enforce position limits to keep helicopter within world boundaries
+     * Prevents helicopter from flying outside the map
+     */
     enforcePositionLimits() {
-      const scene = this.scene;
-      if (!scene || !scene.worldBounds) return;
-      
-      // Clamp position values to world boundaries
-      this.position.x = Math.max(
-        scene.worldBounds.minX, 
-        Math.min(scene.worldBounds.maxX, this.position.x)
-      );
-      
-      
-      this.position.z = Math.max(
-        scene.worldBounds.minZ,
-        Math.min(scene.worldBounds.maxZ, this.position.z)
-      );
+        const scene = this.scene;
+        if (!scene || !scene.worldBounds) return;
+        
+        // Clamp position values to world boundaries
+        this.position.x = Math.max(
+            scene.worldBounds.minX, 
+            Math.min(scene.worldBounds.maxX, this.position.x)
+        );
+        
+        this.position.z = Math.max(
+            scene.worldBounds.minZ,
+            Math.min(scene.worldBounds.maxZ, this.position.z)
+        );
     }
 }

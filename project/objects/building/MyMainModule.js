@@ -1,25 +1,36 @@
-import { CGFobject, CGFappearance } from '../lib/CGF.js';
-import { MyUnitCube } from './MyUnitCube.js';
+import { CGFobject, CGFappearance } from '../../../lib/CGF.js';
+import { MyUnitCube } from '../../geometry/MyUnitCube.js';
 import { MyWindow } from './MyWindow.js';
 import { MyHelipadLight } from './MyHelipadLight.js';
-import { MyPlane } from './MyPlane.js';
+import { MyPlane } from '../../geometry/MyPlane.js';
 import { MyRoofBorder } from './MyRoofBorder.js';
 
-
-// Heliport animation
+/**
+ * Heliport animation states
+ * @enum {string}
+ */
 const HeliportState = {
     NEUTRAL: 'neutral',
     TAKEOFF: 'takeoff',
     LANDING: 'landing'
 };
 
-// Main module class
+/**
+ * MyMainModule - Central building module with helipad
+ * @constructor
+ * @param scene          - Reference to MyScene object
+ * @param width          - Width of the main module
+ * @param numFloors      - Number of floors in the module
+ * @param windowsPerFloor- Number of windows per floor
+ * @param windowSize     - Size of each window
+ * @param color          - RGBA color array for the building walls
+ * @param textures       - Object containing all required textures (door, helipad, up, down, wall, roof, sign)
+ */
 export class MyMainModule extends CGFobject {
     constructor(scene, width, numFloors, windowsPerFloor, windowSize, color, textures = {}) {
         super(scene);
         this.scene = scene;
         this.textures = textures;
-        console.log("MyMainModule textures:", textures);
         // Textures
         this.doorTexture = textures.door;
         this.heliportTexture = textures.helipad;
@@ -27,7 +38,7 @@ export class MyMainModule extends CGFobject {
         this.downTexture = textures.down;
         this.wallTexture = textures.wall;
         this.roofTexture = textures.roof;
-        console.log(textures.sign)
+        console.log(textures.sign);
         this.sign = textures.sign;
 
         // Animation state properties
@@ -58,12 +69,12 @@ export class MyMainModule extends CGFobject {
         // Special elements
         this.door = new MyWindow(scene, null, this.floorHeight * 0.8, this.floorHeight, true, this.doorTexture);
         this.helipad = new MyWindow(scene, this.heliportTexture, this.depth * 0.5, this.depth * 0.5);
-        this.sign = new MyWindow(scene, textures.sign, this.width * 0.8, this.floorHeight * 0.3); // ou MyPlane
+        this.sign = new MyWindow(scene, textures.sign, this.width * 0.8, this.floorHeight * 0.3); // or MyPlane
 
         // Calculate light size relative to helipad
         const lightSizeFactor = this.helipadSize / 5;  // Lights will be 1/5 of helipad size
 
-        // NEW: Corner lights with size proportional to helipad
+        // Corner lights with size proportional to helipad
         this.cornerLights = [];
         for (let i = 0; i < 4; i++) {
             this.cornerLights.push(new MyHelipadLight(scene, lightSizeFactor));
@@ -96,6 +107,12 @@ export class MyMainModule extends CGFobject {
         this.roofBorder = new MyRoofBorder(this.scene, 1, 1, 1);
     }
 
+    /**
+     * Initialize window positions for the module
+     * Calculates evenly distributed positions for windows on each floor
+     * @param windowsPerFloor - Number of windows per floor
+     * @param windowSize      - Size of each window
+     */
     initWindowPositions(windowsPerFloor, windowSize) {
         this.windowPositions = [];
         const totalWindowWidth = windowsPerFloor * windowSize;
@@ -115,7 +132,11 @@ export class MyMainModule extends CGFobject {
         }
     }
 
-    // Update method to be called from scene's update
+    /**
+     * Update method to handle helipad animation
+     * Called from scene's update method
+     * @param t - Current time in milliseconds
+     */
     update(t) {
         // Return to neutral state after 5 seconds of animation, but only for takeoff
         // Landing animation will continue until helicopter is fully landed
@@ -134,7 +155,7 @@ export class MyMainModule extends CGFobject {
                 this.updateHelipadTexture();
             }
 
-            // NEW: Update corner lights with pulsing effect
+            // Update corner lights with pulsing effect
             this.updateCornerLights(t);
         } else {
             // In neutral state, always show the normal texture
@@ -148,7 +169,11 @@ export class MyMainModule extends CGFobject {
         }
     }
 
-    // NEW: Update corner lights with pulsing effect
+    /**
+     * Update corner lights with pulsing effect
+     * Creates sinusoidal intensity variation
+     * @param t - Current time in milliseconds
+     */
     updateCornerLights(t) {
         // Create sinusoidal pulsing effect
         const sinValue = Math.sin(t * 0.010) * 0.5 + 0.5; // Range 0-1
@@ -160,7 +185,10 @@ export class MyMainModule extends CGFobject {
         });
     }
 
-    // Update the helipad texture based on current state and flash status
+    /**
+     * Update the helipad texture based on current state and flash status
+     * Alternates between standard H texture and direction indicators
+     */
     updateHelipadTexture() {
         if (this.isShowingAlternate) {
             if (this.heliportState === HeliportState.TAKEOFF) {
@@ -173,7 +201,11 @@ export class MyMainModule extends CGFobject {
         }
     }
     
-    // Method to set heliport state
+    /**
+     * Set heliport state and initialize appropriate animations
+     * @param state - New state from HeliportState enum
+     * @param t     - Current time in milliseconds
+     */
     setHeliportState(state, t) {
         this.heliportState = state;
         this.lastStateChangeTime = t;
@@ -200,7 +232,10 @@ export class MyMainModule extends CGFobject {
         }
     }
     
-    // Method to get the helipad position for the helicopter's initial position
+    /**
+     * Get the helipad position for helicopter positioning
+     * @return {Object} Position object with x, y, z coordinates
+     */
     getHelipadPosition() {
         return {
             x: 0,
@@ -209,6 +244,9 @@ export class MyMainModule extends CGFobject {
         };
     }
 
+    /**
+     * Display the main building structure and roof
+     */
     displayStructure() {
         // Display main building walls
         this.scene.pushMatrix();
@@ -240,6 +278,9 @@ export class MyMainModule extends CGFobject {
         }
     }
 
+    /**
+     * Display all windows for the module
+     */
     displayWindows() {
         for (const pos of this.windowPositions) {
             this.scene.pushMatrix();
@@ -249,6 +290,9 @@ export class MyMainModule extends CGFobject {
         }
     }
 
+    /**
+     * Display the entrance door
+     */
     displayDoor() {
         this.scene.pushMatrix();
         
@@ -257,7 +301,10 @@ export class MyMainModule extends CGFobject {
         this.scene.popMatrix();
     }
 
-    // NEW: Updated to include corner lights
+    /**
+     * Display helipad with corner lights
+     * Places lights at helipad corners with appropriate size
+     */
     displayHelipad() {
         // Use the stored helipad size
         const cornerOffset = this.helipadSize * 0.4;
@@ -286,29 +333,36 @@ export class MyMainModule extends CGFobject {
         this.scene.popMatrix();
     }
 
+    /**
+     * Display the building sign/logo
+     */
     displaySign() {
         this.scene.pushMatrix();
-        this.scene.translate(0, this.floorHeight, this.depth / 2 + 0.011); // logo acima da porta
+        this.scene.translate(0, this.floorHeight, this.depth / 2 + 0.011); // logo above the door
         this.scene.scale(0.34, 0.6, 0.8); // Scale down the sign
         this.sign.display();
         this.scene.popMatrix();
     }
     
+    /**
+     * Display the roof border
+     * Creates border segments around all sides of the roof
+     */
     displayRoofBorder() {
         const y = this.totalHeight + this.borderHeight / 2 - this.borderHeight;
         const halfW = this.width / 2;
         const halfD = this.depth / 2;
         const t = this.borderThickness;
         this.scene.gl.disable(this.scene.gl.CULL_FACE);
-        // Moldura exterior: as paredes laterais ficam mesmo por fora do telhado
+        // Outer frame: side walls are placed outside the roof
         const segments = [
-            // Frente (lado positivo de Z)
+            // Front (positive Z side)
             { tx: 0, ty: 0, tz: halfD -t / 2 + 0.1, sx: this.width + 2 * t - 1 , sy: this.borderHeight +0.3 , sz: t },
-            // Trás (lado negativo de Z)
+            // Back (negative Z side)
             { tx: 0, ty: 0, tz: -halfD + t / 2 - 0.1, sx: this.width + 2 * t - 1, sy: this.borderHeight +0.3, sz: t },
-            // Direita (lado positivo de X)
+            // Right (positive X side)
             { tx: halfW + t / 3 - 0.3, ty: 0, tz: 0, sx: t, sy: this.borderHeight + 0.3, sz: this.depth + 2 * t -1},
-            // Esquerda (lado negativo de X)
+            // Left (negative X side)
             { tx: -halfW - t / 3 + 0.3, ty: 0, tz: 0, sx: t, sy: this.borderHeight + 0.3, sz: this.depth + 2 * t -1},
         ];
 
@@ -323,7 +377,10 @@ export class MyMainModule extends CGFobject {
         this.scene.gl.enable(this.scene.gl.CULL_FACE);
     }
 
-    // Update display method sequence to ensure proper layering
+    /**
+     * Display the complete module
+     * Handles rendering of all components in the correct order
+     */
     display() {
         this.scene.pushMatrix();
         

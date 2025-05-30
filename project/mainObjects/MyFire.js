@@ -1,6 +1,14 @@
-import { CGFobject, CGFshader, CGFappearance } from '../lib/CGF.js';
-import { MyTriangle } from './MyTriangle.js';
+import { CGFobject, CGFshader, CGFappearance } from '../../lib/CGF.js';
+import { MyTriangle } from '../geometry/MyTriangle.js';
 
+/**
+ * MyFire - Creates and manages fire effects in the scene
+ * @constructor
+ * @param scene         - Reference to MyScene object
+ * @param treePositions - Array of positions {x, z} where trees are located
+ * @param numFires      - Maximum number of fire sites to create (default: 10)
+ * @param flameTexture  - Texture to apply to the flame triangles
+ */
 export class MyFire extends CGFobject {
     constructor(scene, treePositions, numFires = 10, flameTexture) {
         super(scene);
@@ -27,6 +35,12 @@ export class MyFire extends CGFobject {
         this.initTrianglesFromTrees(treePositions, numFires);
     }
 
+    /**
+     * Initialize fire triangles at random tree positions
+     * Creates fire cells at selected tree locations, each containing multiple flame triangles
+     * @param treePositions - Array of positions {x, z} where trees are located
+     * @param numFires      - Maximum number of fire sites to create
+     */
     initTrianglesFromTrees(treePositions, numFires) {
         const selected = new Set();
 
@@ -76,7 +90,13 @@ export class MyFire extends CGFobject {
         }
     }
 
-    // First method: Find a fire at location and return its cell ID if found
+    /**
+     * Find a fire at a specific location within radius
+     * @param x      - X coordinate to check
+     * @param z      - Z coordinate to check
+     * @param radius - Search radius (default: 5)
+     * @return {string|null} Cell ID of the found fire or null if none found
+     */
     findFireAtLocation(x, z, radius = 5) {
         for (const cell of this.cells) {
             if (cell.extinguished || this.extinguishingCells[cell.cellId]) continue;
@@ -92,7 +112,11 @@ export class MyFire extends CGFobject {
         return null; // No fire found at this location
     }
 
-    // Second method: Extinguish a specific fire by its cell ID
+    /**
+     * Extinguish a specific fire by its cell ID
+     * @param cellId - ID of the fire cell to extinguish
+     * @return {boolean} True if fire was found and extinguishing started, false otherwise
+     */
     extinguishFireByID(cellId) {
         if (!cellId) return false;
         
@@ -108,7 +132,13 @@ export class MyFire extends CGFobject {
         return true;
     }
 
-    // Add this new method to find all fires in a radius
+    /**
+     * Find all fires within a specific radius
+     * @param x      - X coordinate to check
+     * @param z      - Z coordinate to check
+     * @param radius - Search radius (default: 10)
+     * @return {Array} Array of cell IDs for fires within radius
+     */
     findAllFiresInRadius(x, z, radius = 10) {
         const foundFireIds = [];
         
@@ -128,6 +158,10 @@ export class MyFire extends CGFobject {
         return foundFireIds;
     }
 
+    /**
+     * Update fire animations and extinguishing effects
+     * @param t - Time delta since last update
+     */
     update(t) {
         if (!this.accumulatedTime) this.accumulatedTime = 0;
         this.accumulatedTime += t / 800;
@@ -152,6 +186,10 @@ export class MyFire extends CGFobject {
         }
     }
 
+    /**
+     * Display all active fire elements
+     * Renders flames with appropriate shader effects and handles extinguishing animation
+     */
     display() {
         this.scene.pushMatrix();
         const currentShader = this.scene.activeShader;
@@ -171,9 +209,7 @@ export class MyFire extends CGFobject {
                 this.scene.scale(scale, scale, scale);
 
                 const fading = new CGFappearance(this.scene);
-                // FIX: Update alpha (4th component) to fade out completely
                 fading.setEmission(1.0 * scale, 0.6 * scale, 0.0 * scale, scale);
-                // FIX: Set ambient and diffuse to zero to prevent white appearance
                 fading.setAmbient(0, 0, 0, scale);
                 fading.setDiffuse(0, 0, 0, scale);
                 fading.setTexture(this.flameMaterial.texture);
