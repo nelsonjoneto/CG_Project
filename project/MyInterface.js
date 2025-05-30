@@ -17,6 +17,68 @@ export class MyInterface extends CGFinterface {
         // https://github.com/dataarts/dat.gui/blob/master/API.md
         this.gui = new dat.GUI();
 
+        // Display options
+        this.gui.add(this.scene, 'displayAxis').name('Display Axis');
+        this.gui.add(this.scene, 'displayPlane').name("Display Plane");
+        this.gui.add(this.scene, 'displayPanorama').name("Display Panorama");
+        
+        // Create Helicopter Movement folder
+        const helicopterFolder = this.gui.addFolder('Helicopter Movement');
+        
+        // Add speedFactor slider to helicopter folder
+        helicopterFolder.add(this.scene, 'speedFactor', 0.1, 3.0, 0.1)
+            .name('Speed Factor')
+            .onChange((val) => {
+                this.scene.speedFactor = val;
+            });
+            
+        // Open the helicopter folder by default
+        helicopterFolder.open();
+        
+        // Folder for building controls
+        const buildingFolder = this.gui.addFolder('Building Configuration');
+        
+        // Controllers for number of floors and windows
+        buildingFolder.add(this.scene, 'buildingFloors', 1, 3, 1)
+          .name('Number of Floors')
+          .onChange(() => this.scene.updateBuilding());
+          
+        buildingFolder.add(this.scene, 'buildingWindows', 1, 4, 1)
+          .name('Windows per Floor')
+          .onChange(() => this.scene.updateBuilding());
+          
+        // Open the building folder by default
+        buildingFolder.open();
+
+        // Camera controls
+        const cameraFolder = this.gui.addFolder('Camera Settings');
+
+        // Add dropdown to select camera
+        cameraFolder.add(this.scene, 'activeCamera', ['default', 'helicopter'])
+          .name('Active Camera')
+          .onChange((val) => {
+            if (val === 'default') {
+              this.scene.camera = this.scene.defaultCamera;
+            } else {
+              this.scene.camera = this.scene.helicopterCamera;
+            }
+          });
+
+        // Add controls for helicopter camera
+        cameraFolder.add(this.scene, 'heliCamDistance', 5, 30)
+          .name('Distance')
+          .onChange(() => this.scene.updateHelicopterCamera());
+        
+        cameraFolder.add(this.scene, 'heliCamHeight', 2, 20)
+          .name('Height')
+          .onChange(() => this.scene.updateHelicopterCamera());
+        
+        cameraFolder.add(this.scene, 'heliCamAngle', -Math.PI / 2, 3 * Math.PI / 2, 0.1)
+          .name('Angle')
+          .onChange(() => this.scene.updateHelicopterCamera());
+
+        cameraFolder.open();
+
         this.initKeys();
 
         return true;
@@ -47,5 +109,4 @@ export class MyInterface extends CGFinterface {
         // returns true if a key is marked as pressed, false otherwise
         return this.activeKeys[keyCode] || false;
     }
-
 }
