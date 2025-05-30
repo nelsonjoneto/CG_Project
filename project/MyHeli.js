@@ -7,6 +7,7 @@ import { MyTail } from './MyTail.js';
 import { MyVerticalFin } from './MyVerticalFin.js';
 import { MyBucket } from './MyBucket.js'; 
 import { MyRope } from './MyRope.js'; 
+import { MyCone } from './MyCone.js'; // Import the cone for water drop effect
 
 // Helicopter states as enum
 const HeliState = {
@@ -131,6 +132,8 @@ export class MyHelicopter extends CGFobject {
         // Bucket and rope for transport
         this.bucket = new MyBucket(this.scene);
         this.rope = new MyRope(this.scene);
+        this.waterCone = new MyCone(this.scene, 24, 10, 1, 1); // Inicialização simples
+
 
         this.helicopterMaterial = new CGFappearance(this.scene);
         this.helicopterMaterial.setAmbient(0.4, 0.4, 0.4, 1.0);
@@ -145,6 +148,17 @@ export class MyHelicopter extends CGFobject {
         this.glassMaterial.setSpecular(0.8, 0.8, 0.8, 1.0);
         this.glassMaterial.setShininess(100.0);
         if (this.textures.heliGlass) this.glassMaterial.setTexture(this.textures.heliGlass);
+
+        this.waterMaterial = new CGFappearance(this.scene);
+        this.waterMaterial.setAmbient(0.5, 0.5, 0.5, 1.0);     // Iluminação ambiente mais forte
+        this.waterMaterial.setDiffuse(0.9, 0.9, 0.9, 1.0);     // Reflete mais luz difusa
+        this.waterMaterial.setSpecular(0.6, 0.6, 0.6, 1.0);    // Reflexo especular mais leve
+        this.waterMaterial.setShininess(10.0);                // Brilho mais suave
+
+        if (this.textures.water) {
+            this.waterMaterial.setTexture(this.textures.water);
+            this.waterMaterial.setTextureWrap('REPEAT', 'REPEAT');
+        }
     }
 
     get isLanded() {
@@ -567,7 +581,7 @@ export class MyHelicopter extends CGFobject {
             const fallProgress = Math.min(1.0, (this.waterDropAnimation.progress - 0.2) / 0.7);
             
             // Water position - use ease-in quad for natural falling acceleration
-            const easeInQuad = fallProgress * fallProgress;
+            const easeInQuad = fallProgress * fallProgress * (2 - fallProgress); // Easing function
             
             // Distance from helicopter to ground
             const groundY = 0.5; // Estimated ground level
@@ -781,44 +795,41 @@ export class MyHelicopter extends CGFobject {
     }
 
     displayWaterDrop(bucketY) {
-        const waterMaterial = new CGFappearance(this.scene);
-        waterMaterial.setAmbient(0.1, 0.4, 0.8, 0.8);
-        waterMaterial.setDiffuse(0.2, 0.6, 0.9, 0.8);
-        waterMaterial.setSpecular(0.5, 0.8, 1.0, 0.8);
-        waterMaterial.setShininess(120);
-        
-        // Save the current matrix (helicopter's coordinate system)
-        this.scene.pushMatrix();
-        
-        // Get the absolute world position where water starts falling
-        let bucketWorldX = this.position.x;
-        let bucketWorldY = this.position.y + bucketY;
-        let bucketWorldZ = this.position.z;
-        
-        // Revert to world coordinates (pop the helicopter's matrix)
-        this.scene.popMatrix();
-        
-        // Start a fresh matrix stack in world coordinates 
-        this.scene.pushMatrix();
-        
-        // Position the water at the bucket's world position
-        this.scene.translate(bucketWorldZ, bucketWorldY - this.waterDropAnimation.waterY, bucketWorldX);
-        
-        // Rotate cylinder to be vertical (in world space)
-        this.scene.rotate(Math.PI/2, 1, 0, 0);
-        
-        // Water gets wider as it falls, but shorter in height
-        const widthScale = this.waterDropAnimation.waterScale;
-        const heightScale = Math.max(0.05, 0.3 - this.waterDropAnimation.progress * 0.2);
-        
-        this.scene.scale(widthScale, widthScale, heightScale);
-        
-        // Apply water material and display
-        waterMaterial.apply();
-        this.bucket.waterCylinder.display();
-        
-        this.scene.popMatrix();
-    }
+    const waterMaterial = this.waterMaterial;
+
+    const bucketWorldX = this.position.x;
+    const bucketWorldY = this.position.y + bucketY;
+    const bucketWorldZ = this.position.z;
+
+    this.scene.pushMatrix();
+
+    // Topo fixo na boca do balde
+    this.scene.translate(bucketWorldZ, bucketWorldY, bucketWorldX);
+
+    const progress = this.waterDropAnimation.progress;
+
+    const fallProgress = Math.min(1.0, (progress - 0.2) / 0.7); // 0 → 1
+    const easeInQuad = fallProgress * fallProgress;
+
+    const groundY = 3;
+    const maxFallDistance = this.position.y - groundY -4;
+    const height = easeInQuad * maxFallDistance;
+
+    const spreadFactor = 30; // controla quanto aumenta
+    const baseRadius = this.bucket.getRimRadius() * (1 + fallProgress * spreadFactor);
+
+    this.scene.scale(baseRadius, height, baseRadius);
+    this.scene.translate(0, -1, 0);
+
+    waterMaterial.apply();
+    this.waterCone.display();
+
+    this.scene.popMatrix();
+}
+
+
+
+
 
     display() {
         // Begin helicopter transformation

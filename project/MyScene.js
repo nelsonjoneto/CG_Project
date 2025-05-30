@@ -113,7 +113,8 @@ export class MyScene extends CGFscene {
     this.helicopter = new MyHelicopter(this, helipadPosition, 
       {
         heliBody: this.textures.heliBody,
-        heliGlass: this.textures.heliGlass
+        heliGlass: this.textures.heliGlass,
+        water: this.textures.water
       }
     );
 
