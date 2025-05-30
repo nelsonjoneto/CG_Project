@@ -817,7 +817,7 @@ export class MyHelicopter extends CGFobject {
         
         // Find ALL fires within radius and store their IDs
         const targetFireIds = [];
-        const waterRadius = 7; // Larger area effect for water
+        const waterRadius = 10; // Larger area effect for water
         
         if (this.scene && this.scene.fire) {
             // Get all fire cell IDs in the target area
