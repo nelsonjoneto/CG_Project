@@ -430,8 +430,8 @@ export class MyScene extends CGFscene {
     if (this.displayPlane && this.ground) this.ground.display();
     if (this.displayAxis && this.axis) this.axis.display();
     if (this.displayBuilding && this.building) this.building.display();
-    //if (this.displayForest && this.forest) this.forest.display();
-    //if (this.displayFire && this.fire) this.fire.display();
+    if (this.displayForest && this.forest) this.forest.display();
+    if (this.displayFire && this.fire) this.fire.display();
     if (this.displayHelicopter && this.helicopter) this.helicopter.display();
   }
 

@@ -523,6 +523,9 @@ export class MyHelicopter extends CGFobject {
             this.hasWater = false;
             this.state = HeliState.CRUISING;
             
+            // Explicitly reset bucket open state to ensure it's fully closed
+            this.waterDropAnimation.bucketOpen = 0;
+            
             // Extinguish all the fires we identified at the start
             if (this.scene && this.scene.fire && this.targetFireIds && this.targetFireIds.length > 0) {
                 // Extinguish each fire in the stored array
