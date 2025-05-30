@@ -202,6 +202,9 @@ export class MyHelicopter extends CGFobject {
         this.updateRotors(dt);
         this.updateTilt();
         this.updateSideTilt();
+        
+        // Enforce position limits after all position updates
+        this.enforcePositionLimits();
     }
 
     // Helper method for smooth value transitions
@@ -984,5 +987,23 @@ export class MyHelicopter extends CGFobject {
             this.skiSupport.display();
             this.scene.popMatrix();
         }
+    }
+
+    // Add this method to the MyHelicopter class
+    enforcePositionLimits() {
+      const scene = this.scene;
+      if (!scene || !scene.worldBounds) return;
+      
+      // Clamp position values to world boundaries
+      this.position.x = Math.max(
+        scene.worldBounds.minX, 
+        Math.min(scene.worldBounds.maxX, this.position.x)
+      );
+      
+      
+      this.position.z = Math.max(
+        scene.worldBounds.minZ,
+        Math.min(scene.worldBounds.maxZ, this.position.z)
+      );
     }
 }

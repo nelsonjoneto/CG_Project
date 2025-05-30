@@ -47,6 +47,14 @@ export class MyScene extends CGFscene {
 
     // Add timing for shader animation
     this.accumulatedTime = 0;
+
+    // Define world boundaries for helicopter movement
+    this.worldBounds = {
+      minX: -100,
+      maxX: 100,
+      minZ: -100,
+      maxZ: 100
+    };
   }
 
   init(application) {
@@ -234,6 +242,16 @@ export class MyScene extends CGFscene {
     );
   }
 
+  // Add this method to check if a position is within the allowed boundaries
+  isPositionValid(position) {
+    return (
+      position.x >= this.worldBounds.minX && 
+      position.x <= this.worldBounds.maxX &&
+      position.z >= this.worldBounds.minZ && 
+      position.z <= this.worldBounds.maxZ
+    );
+  }
+
   checkKeys(delta_t) {
     if (this.helicopter) {
       // Scale controls by delta_t and speedFactor for smooth movement
@@ -412,8 +430,8 @@ export class MyScene extends CGFscene {
     if (this.displayPlane && this.ground) this.ground.display();
     if (this.displayAxis && this.axis) this.axis.display();
     if (this.displayBuilding && this.building) this.building.display();
-    if (this.displayForest && this.forest) this.forest.display();
-    if (this.displayFire && this.fire) this.fire.display();
+    //if (this.displayForest && this.forest) this.forest.display();
+    //if (this.displayFire && this.fire) this.fire.display();
     if (this.displayHelicopter && this.helicopter) this.helicopter.display();
   }
 
