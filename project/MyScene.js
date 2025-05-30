@@ -18,8 +18,18 @@ export class MyScene extends CGFscene {
     this.buildingWindows = 2;
     this.buildingWidth = 15;
     
-    // Helicopter speed factor - add to GUI later
+    // Helicopter speed factor
     this.speedFactor = 1;
+    
+    // Camera settings
+    this.activeCamera = 'default'; // Current active camera: 'default' or 'helicopter'
+    this.defaultCamera = null;    // Will hold the default camera
+    this.helicopterCamera = null; // Will hold the helicopter-focused camera
+    
+    // Helicopter camera settings
+    this.heliCamDistance = 15;  // Distance from helicopter
+    this.heliCamHeight = 8;     // Height above helicopter
+    this.heliCamAngle = -Math.PI/2;      // Angle around helicopter (radians)
     
     // Time tracking
     this.lastTime = 0;
@@ -115,7 +125,7 @@ export class MyScene extends CGFscene {
 
   initLights() {
     // Main light
-    this.lights[0].setPosition(200, 300, 200, 1);
+    this.lights[0].setPosition(0, 100, -100, 1);
     this.lights[0].setAmbient(0.1, 0.1, 0.1, 1.0);
     this.lights[0].setDiffuse(0.4, 0.4, 0.4, 1.0);
     this.lights[0].setSpecular(0.1, 0.1, 0.1, 1.0);
@@ -123,14 +133,14 @@ export class MyScene extends CGFscene {
     this.lights[0].update();
     
     // Additional lights
-    this.lights[1].setPosition(-200, 100, -200, 1);
+    this.lights[1].setPosition(0, 200, 0, 1);
     this.lights[1].setAmbient(0.1, 0.1, 0.1, 1.0);
     this.lights[1].setDiffuse(0.4, 0.4, 0.4, 1.0);
     this.lights[1].setSpecular(0.1, 0.1, 0.1, 1.0);
     this.lights[1].enable();
     this.lights[1].update();
 
-    this.lights[2].setPosition(0, 250, -200, 1);
+    this.lights[2].setPosition(100, 200, 100, 1);
     this.lights[2].setAmbient(0.1, 0.1, 0.1, 1.0);
     this.lights[2].setDiffuse(0.4, 0.4, 0.4, 1.0);
     this.lights[2].setSpecular(0.1, 0.1, 0.1, 1.0);
@@ -139,13 +149,52 @@ export class MyScene extends CGFscene {
   }
   
   initCameras() {
-    this.camera = new CGFcamera(
+    // Create default camera (static, overview position)
+    this.defaultCamera = new CGFcamera(
       1,
       0.1,
       1000,
       vec3.fromValues(50, 50, 50),
       vec3.fromValues(0, 0, 0)
     );
+    
+    // Create helicopter camera (will be updated to follow helicopter)
+    this.helicopterCamera = new CGFcamera(
+      1.1,  // Slightly wider angle for better view
+      0.1,
+      1000,
+      vec3.fromValues(15, 10, 15),  // Initial position
+      vec3.fromValues(0, 0, 0)      // Initial target
+    );
+    
+    // Set active camera as the default
+    this.camera = this.defaultCamera;
+  }
+
+  updateHelicopterCamera() {
+    if (!this.helicopter) return;
+    
+    const heliPos = this.helicopter.getPosition();
+    const heliOrientation = this.helicopter.orientation;
+    
+    // Calculate camera position based on helicopter position, orientation and set distance
+    const camX = heliPos.z + Math.sin(heliOrientation + this.heliCamAngle) * this.heliCamDistance;
+    const camY = heliPos.y + this.heliCamHeight;
+    const camZ = heliPos.x + Math.cos(heliOrientation + this.heliCamAngle) * this.heliCamDistance;
+    
+    // Update helicopter camera position and target
+    this.helicopterCamera.position = vec3.fromValues(camX, camY, camZ);
+    this.helicopterCamera.target = vec3.fromValues(heliPos.z, heliPos.y, heliPos.x);
+  }
+
+  toggleCamera() {
+    if (this.activeCamera === 'default') {
+      this.activeCamera = 'helicopter';
+      this.camera = this.helicopterCamera;
+    } else {
+      this.activeCamera = 'default';
+      this.camera = this.defaultCamera;
+    }
   }
 
   isBuildingArea(x, z) {
@@ -202,6 +251,16 @@ export class MyScene extends CGFscene {
         this.helicopter.startDescent();
       }
     }
+    
+    // Add camera toggle with 'C' key
+    if (this.gui.isKeyPressed("KeyC") && !this.keyPressedC) {
+      this.toggleCamera();
+      this.keyPressedC = true;
+    }
+    
+    if (!this.gui.isKeyPressed("KeyC")) {
+      this.keyPressedC = false;
+    }
   }
 
   update(t) {
@@ -219,10 +278,39 @@ export class MyScene extends CGFscene {
     // Update helicopter
     if (this.helicopter) {
       this.helicopter.update(delta_t);
+      
+      // Update helicopter camera if it exists
+      this.updateHelicopterCamera();
     }
     
     // Process keyboard input
     this.checkKeys(delta_t);
+  }
+
+  
+  updateBuilding() {
+    if (this.building) {
+      // Store helicopter landing state before recreating building
+      const helicopterWasLanded = this.helicopter && this.helicopter.isLanded;
+      
+      // Create new building with updated parameters
+      this.building = new MyBuilding(this, this.buildingWidth, this.buildingFloors, this.buildingWindows, 
+        [this.textures.window, this.textures.window, this.textures.window],
+        [0.7, 0.7, 0.7, 1.0], 
+        {
+          door: this.textures.door, 
+          helipad: this.textures.helipad,
+          wall: this.textures.wall,
+          roof: this.textures.roof
+        }
+      );
+      
+      // If helicopter exists and was landed, update its position
+      if (helicopterWasLanded && this.helicopter) {
+        const newHelipadPos = this.building.getHelipadPosition();
+        this.helicopter.resetPosition();
+      }
+    }
   }
 
   setDefaultAppearance() {
@@ -248,7 +336,8 @@ export class MyScene extends CGFscene {
     if (this.displayPlane) this.ground.display();
     if (this.displayAxis) this.axis.display();
     if (this.displayBuilding) this.building.display();
-    //if (this.displayForest) this.forest.display();
+    if (this.displayForest) this.forest.display();
     if (this.displayHelicopter) this.helicopter.display();
   }
+
 }

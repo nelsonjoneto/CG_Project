@@ -17,16 +17,23 @@ export class MyInterface extends CGFinterface {
         // https://github.com/dataarts/dat.gui/blob/master/API.md
         this.gui = new dat.GUI();
 
+        // Display options
         this.gui.add(this.scene, 'displayAxis').name('Display Axis');
         this.gui.add(this.scene, 'displayPlane').name("Display Plane");
         this.gui.add(this.scene, 'displayPanorama').name("Display Panorama");
         
-        // Add speedFactor slider
-        this.gui.add(this.scene, 'speedFactor', 0.1, 3.0, 0.1)
+        // Create Helicopter Movement folder
+        const helicopterFolder = this.gui.addFolder('Helicopter Movement');
+        
+        // Add speedFactor slider to helicopter folder
+        helicopterFolder.add(this.scene, 'speedFactor', 0.1, 3.0, 0.1)
             .name('Speed Factor')
             .onChange((val) => {
                 this.scene.speedFactor = val;
             });
+            
+        // Open the helicopter folder by default
+        helicopterFolder.open();
         
         // Folder for building controls
         const buildingFolder = this.gui.addFolder('Building Configuration');
@@ -40,8 +47,37 @@ export class MyInterface extends CGFinterface {
           .name('Windows per Floor')
           .onChange(() => this.scene.updateBuilding());
           
-        // Open the folder by default
+        // Open the building folder by default
         buildingFolder.open();
+
+        // Camera controls
+        const cameraFolder = this.gui.addFolder('Camera Settings');
+
+        // Add dropdown to select camera
+        cameraFolder.add(this.scene, 'activeCamera', ['default', 'helicopter'])
+          .name('Active Camera')
+          .onChange((val) => {
+            if (val === 'default') {
+              this.scene.camera = this.scene.defaultCamera;
+            } else {
+              this.scene.camera = this.scene.helicopterCamera;
+            }
+          });
+
+        // Add controls for helicopter camera
+        cameraFolder.add(this.scene, 'heliCamDistance', 5, 30)
+          .name('Distance')
+          .onChange(() => this.scene.updateHelicopterCamera());
+        
+        cameraFolder.add(this.scene, 'heliCamHeight', 2, 20)
+          .name('Height')
+          .onChange(() => this.scene.updateHelicopterCamera());
+        
+        cameraFolder.add(this.scene, 'heliCamAngle', -Math.PI / 2, 3 * Math.PI / 2, 0.1)
+          .name('Angle')
+          .onChange(() => this.scene.updateHelicopterCamera());
+
+        cameraFolder.open();
 
         this.initKeys();
 
