@@ -937,20 +937,26 @@ export class MyHelicopter extends CGFobject {
         // Topo fixo na boca do balde
         this.scene.translate(bucketWorldZ, bucketWorldY, bucketWorldX);
 
+        // Get the current animation progress (from 0 to 1)
         const progress = this.waterDropAnimation.progress;
-
+        // Normalize progress for the falling portion only
         const fallProgress = Math.min(1.0, (progress - 0.2) / 0.7); // Range: 0 → 1
+        // Apply an ease-in quadratic function to make the fall start slowly and accelerate
         const easeInQuad = fallProgress * fallProgress;
 
         const groundY = 2.7; // Ground level approximation
+        // Compute how far water can fall from the helicopter to the ground (clamped)
         const maxFallDistance = this.position.y - groundY;
+        // Determine how far the water should fall at this point in the animation
         const height = easeInQuad * maxFallDistance;
 
-        const spreadFactor = 30; // controla quanto aumenta
+        // Compute how much the water should spread as it falls
+        const spreadFactor = 30;
         const baseRadius = this.bucket.getRimRadius() * (1 + fallProgress * spreadFactor);
 
+        // Apply transformations: scale and translate the cone downward
         this.scene.scale(baseRadius, height, baseRadius);
-        this.scene.translate(0, -1, 0);
+        this.scene.translate(0, -1, 0); // Center the cone along its base
 
         waterMaterial.apply();
         this.waterCone.display();
