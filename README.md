@@ -1,6 +1,7 @@
 # CG 2024/2025
 
-## Group T0xG0y
+## Group T07G10
+
 | Name             | Number    | E-Mail             |
 | ---------------- | --------- | ------------------ |
 | Gabriela Silva   | 202004443 | up202004443@up.pt  |
