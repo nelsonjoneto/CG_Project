@@ -9,9 +9,13 @@
 
 ----
 
-  - [tp1](tp1/README.md)
-  - [tp2](tp2/README.md)
-  - [tp3](tp3/README.md)
-  - [tp4](tp4/README.md)
-  - [tp5](tp5/README.md)
-  - [Project](project/README.md)
+## Project Links
+
+| Assignment | Documentation | Demo |
+| ---------- | ------------ | ---- |
+| TP1        | [README](tp1/README.md) | [Demo](tp1/index.html) |
+| TP2        | [README](tp2/README.md) | [Demo](tp2/index.html) |
+| TP3        | [README](tp3/README.md) | [Demo](tp3/index.html) |
+| TP4        | [README](tp4/README.md) | [Demo](tp4/index.html) |
+| TP5        | [README](tp5/README.md) | [Demo](tp5/index.html) |
+| Project    | [README](project/README.md) | [Demo](project/index.html) |
